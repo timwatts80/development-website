@@ -1,0 +1,13 @@
+{
+  "name": "development-website",
+  "version": "1.0.0",
+  "description": "Development website showcasing Tetris game built with Vite",
+  "scripts": {
+    "build": "cd games/tetris-video-game && npm install && npm run build",
+    "dev": "cd games/tetris-video-game && npm run dev",
+    "preview": "cd games/tetris-video-game && npm run preview"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}
