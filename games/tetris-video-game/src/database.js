@@ -6,9 +6,12 @@ export class ScoreDatabase {
                          window.location.hostname === '127.0.0.1' ||
                          window.location.hostname === '';
     
-    // Detect iOS for enhanced compatibility
+    // Detect iOS for enhanced compatibility (including iOS Chrome)
     this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+                 /CriOS/.test(navigator.userAgent) || // Chrome on iOS
+                 /FxiOS/.test(navigator.userAgent) || // Firefox on iOS
+                 /EdgiOS/.test(navigator.userAgent);  // Edge on iOS
     
     if (isDevelopment) {
       // Development: Use localhost with port 3001
@@ -84,15 +87,18 @@ export class ScoreDatabase {
                            error.name === 'AbortError';
       
       const isCorsError = error.message.includes('CORS') ||
-                         error.message.includes('cors') ||
-                         response?.status === 0;
+                         error.message.includes('cors');
       
-      if (isNetworkError || isCorsError) {
-        console.warn(`� iOS/Network error detected, falling back to localStorage`);
+      // Be more aggressive with fallback on iOS
+      const shouldFallback = isNetworkError || isCorsError || this.isIOS;
+      
+      if (shouldFallback) {
+        console.warn(`🍎 iOS/Network error detected, falling back to localStorage`);
         console.warn(`📱 Error details:`, {
           name: error.name,
           message: error.message,
-          userAgent: navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad') ? 'iOS' : 'Other'
+          userAgent: this.isIOS ? 'iOS' : 'Other',
+          isIOS: this.isIOS
         });
         return this.fallbackToLocalStorage(endpoint, options);
       }
@@ -178,21 +184,9 @@ export class ScoreDatabase {
   // Add a new score and return the updated leaderboard
   async addScore(playerName, score) {
     try {
-      // iOS pre-connectivity test
+      // iOS: Skip pre-connectivity test for now, just try direct API call
       if (this.isIOS) {
-        console.log(`🍎 iOS: Pre-testing connectivity before adding score...`);
-        const connectivityOk = await this.testConnectivity();
-        if (!connectivityOk) {
-          console.log(`🍎 iOS: Connectivity test failed, using localStorage directly`);
-          return this.fallbackToLocalStorage('/scores', {
-            method: 'POST',
-            body: JSON.stringify({
-              name: playerName.trim() || 'Anonymous',
-              score: score
-            })
-          });
-        }
-        console.log(`🍎 iOS: Connectivity test passed, proceeding with server request`);
+        console.log(`🍎 iOS: Attempting direct API call (Chrome/Safari mode)...`);
       }
 
       const response = await this.makeRequest('/scores', {
@@ -211,6 +205,19 @@ export class ScoreDatabase {
       };
     } catch (error) {
       console.error('Error adding score:', error);
+      
+      // Fallback to localStorage if API fails
+      if (this.isIOS) {
+        console.log(`🍎 iOS: API failed, using localStorage fallback`);
+        return this.fallbackToLocalStorage('/scores', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: playerName.trim() || 'Anonymous',
+            score: score
+          })
+        });
+      }
+      
       // Return default values on error
       return {
         rank: -1,

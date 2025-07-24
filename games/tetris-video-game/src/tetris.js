@@ -958,10 +958,29 @@ export class TetrisGame {
   // Check server connection
   async checkServerConnection() {
     try {
+      console.log('🔍 Checking server connection...');
+      
+      // Be more forgiving on iOS - if health check fails, still allow the game to try API calls
       this.serverConnected = await this.database.checkServerHealth();
+      
+      // iOS fallback: Even if health check fails, set connected to true to allow API attempts
+      if (!this.serverConnected && this.database.isIOS) {
+        console.log('🍎 iOS: Health check failed, but will attempt API calls with fallback');
+        this.serverConnected = true; // Let iOS try API calls and fallback gracefully
+      }
+      
       this.updateServerStatus();
     } catch (error) {
-      this.serverConnected = false;
+      console.error('Server connection check failed:', error);
+      
+      // On iOS, still allow attempts even if connection check fails
+      if (this.database.isIOS) {
+        console.log('🍎 iOS: Connection check failed, but enabling API attempts with fallback');
+        this.serverConnected = true;
+      } else {
+        this.serverConnected = false;
+      }
+      
       this.updateServerStatus();
     }
   }
@@ -972,13 +991,20 @@ export class TetrisGame {
     
     if (this.serverConnected) {
       indicator.className = 'status-indicator connected';
-      statusText.textContent = 'Global Leaderboard';
+      if (this.database.isIOS) {
+        statusText.textContent = 'Global Leaderboard (iOS)';
+      } else {
+        statusText.textContent = 'Global Leaderboard';
+      }
     } else {
       indicator.className = 'status-indicator disconnected';
       statusText.textContent = 'Local Scores Only';
     }
     
     console.log(`Server status: ${this.serverConnected ? 'Connected' : 'Offline (using local storage)'}`);
+    if (this.database.isIOS) {
+      console.log('🍎 iOS mode: Will attempt server calls with automatic localStorage fallback');
+    }
   }
 
   updateUI() {
