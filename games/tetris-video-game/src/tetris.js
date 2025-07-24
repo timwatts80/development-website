@@ -371,6 +371,7 @@ export class TetrisGame {
     await this.spawnPiece();
     this.spawnNextPiece();
     this.updateButtons();
+    this.updateSpeedIndicator(); // Initialize speed indicator
     this.gameLoop();
   }
 
@@ -398,6 +399,7 @@ export class TetrisGame {
     this.hideGameOver();
     this.updateButtons();
     this.updateUI();
+    this.updateSpeedIndicator(); // Reset speed indicator
     this.render();
   }
 
@@ -658,12 +660,20 @@ export class TetrisGame {
       }
       
       // Ensure minimum speed
+      const oldDropInterval = this.dropInterval;
       this.dropInterval = Math.max(SPEED_CURVE.MIN_SPEED, newDropInterval);
       
-      console.log(`🎉 Level Up! Level ${oldLevel} → ${this.level} (Speed: ${this.dropInterval}ms)`);
+      // Calculate speed percentage (higher percentage = faster)
+      const speedPercentage = Math.round(((INITIAL_SPEED - this.dropInterval) / (INITIAL_SPEED - SPEED_CURVE.MIN_SPEED)) * 100);
+      
+      console.log(`🎉 Level Up! Level ${oldLevel} → ${this.level}`);
+      console.log(`⚡ Speed: ${oldDropInterval}ms → ${this.dropInterval}ms (${speedPercentage}% max speed)`);
       
       // Create visual feedback for level up
       this.createLevelUpEffect();
+      
+      // Update the UI to show the new speed
+      this.updateSpeedIndicator();
     }
   }
 
@@ -680,6 +690,25 @@ export class TetrisGame {
       type: 'levelup'
     };
     this.bubbleEffects.push(effect);
+  }
+
+  updateSpeedIndicator() {
+    // Calculate speed percentage (higher percentage = faster)
+    const speedPercentage = Math.round(((INITIAL_SPEED - this.dropInterval) / (INITIAL_SPEED - SPEED_CURVE.MIN_SPEED)) * 100);
+    
+    // Update the speed indicator if it exists
+    const speedElement = document.getElementById('speed-indicator');
+    if (speedElement) {
+      speedElement.textContent = `Speed: ${speedPercentage}%`;
+      
+      // Add visual feedback for speed changes
+      speedElement.style.transform = 'scale(1.2)';
+      speedElement.style.color = '#ff6b6b';
+      setTimeout(() => {
+        speedElement.style.transform = 'scale(1)';
+        speedElement.style.color = '';
+      }, 300);
+    }
   }
 
   createBubbleEffects(clearedLinePositions) {

@@ -166,6 +166,17 @@ body {
   font-weight: bold;
   font-size: 1.1em;
   text-align: center;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+/* Special styling for speed indicator */
+.speed {
+  position: relative;
+}
+
+#speed-indicator {
+  display: inline-block;
+  transition: transform 0.3s ease, color 0.3s ease;
 }
 
 .next-piece-overlay h4 {
