@@ -90,6 +90,28 @@ tetris-video-game/
 2. **Check port 3001 is available**: `lsof -i :3001`
 3. **Test health endpoint**: `curl http://localhost:3001/api/health`
 
+### iOS-specific issues:
+
+The game includes enhanced iOS compatibility features:
+
+- **Automatic iOS detection** with optimized timeouts
+- **Enhanced CORS headers** for Safari compatibility
+- **Pre-connectivity testing** before API calls
+- **Faster fallback** to localStorage on iOS
+- **Cache-busting headers** to prevent iOS caching issues
+
+**iOS debugging steps:**
+1. **Open Safari Web Inspector** on Mac (Develop menu)
+2. **Check console logs** for iOS-specific messages (🍎 prefix)
+3. **Look for connectivity test results** in console
+4. **Verify CORS and network errors** in Network tab
+
+**Common iOS fixes:**
+- Game automatically uses shorter timeouts on iOS (8s vs 10s)
+- Pre-tests connectivity before adding scores
+- Falls back to localStorage more aggressively
+- Uses iOS-compatible AbortController for timeouts
+
 ## 📊 Data Storage
 
 - **Development**: JSON file (`server/scores.json`)

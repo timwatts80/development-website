@@ -6,6 +6,10 @@ export class ScoreDatabase {
                          window.location.hostname === '127.0.0.1' ||
                          window.location.hostname === '';
     
+    // Detect iOS for enhanced compatibility
+    this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    
     if (isDevelopment) {
       // Development: Use localhost with port 3001
       this.baseUrl = 'http://localhost:3001/api';
@@ -18,19 +22,48 @@ export class ScoreDatabase {
     this.maxScores = 10;
     console.log(`🌐 ScoreDatabase initialized with API URL: ${this.baseUrl}`);
     console.log(`🔧 Environment: ${isDevelopment ? 'Development' : 'Production'}`);
+    console.log(`📱 iOS detected: ${this.isIOS}`);
+    
+    if (this.isIOS) {
+      console.log(`🍎 iOS optimizations enabled`);
+    }
+  }
+
+  // Create timeout signal compatible with older iOS versions
+  createTimeoutSignal(timeout) {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), timeout);
+    return controller.signal;
   }
 
   // Helper method to make API requests
   async makeRequest(endpoint, options = {}) {
     try {
       const url = `${this.baseUrl}${endpoint}`;
-      const response = await fetch(url, {
+      
+      // iOS-specific fetch configuration
+      const fetchOptions = {
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          // Add cache-busting for iOS
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
           ...options.headers
         },
+        // Add timeout and other iOS-friendly options
+        signal: this.createTimeoutSignal(this.isIOS ? 8000 : 10000),
+        mode: 'cors',
+        credentials: 'omit', // iOS sometimes has issues with credentials
         ...options
-      });
+      };
+
+      console.log(`📡 Making request to: ${url}`, fetchOptions);
+      
+      const response = await fetch(url, fetchOptions);
+      
+      console.log(`📨 Response status: ${response.status} for ${url}`);
 
       const data = await response.json();
       
@@ -42,15 +75,25 @@ export class ScoreDatabase {
     } catch (error) {
       console.error(`❌ API request failed for ${this.baseUrl}${endpoint}:`, error);
       
-      // If server is not available, fall back to localStorage
-      if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
-        console.warn(`⚠️  Server unavailable at ${this.baseUrl}, falling back to localStorage`);
-        return this.fallbackToLocalStorage(endpoint, options);
-      }
+      // Enhanced error detection for iOS
+      const isNetworkError = error.name === 'TypeError' || 
+                           error.message.includes('fetch') || 
+                           error.message.includes('Failed to fetch') ||
+                           error.message.includes('NetworkError') ||
+                           error.message.includes('timeout') ||
+                           error.name === 'AbortError';
       
-      // Network or CORS errors
-      if (error.name === 'TypeError' || error.message.includes('NetworkError') || error.message.includes('CORS')) {
-        console.warn(`🌐 Network/CORS error connecting to ${this.baseUrl}, falling back to localStorage`);
+      const isCorsError = error.message.includes('CORS') ||
+                         error.message.includes('cors') ||
+                         response?.status === 0;
+      
+      if (isNetworkError || isCorsError) {
+        console.warn(`� iOS/Network error detected, falling back to localStorage`);
+        console.warn(`📱 Error details:`, {
+          name: error.name,
+          message: error.message,
+          userAgent: navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad') ? 'iOS' : 'Other'
+        });
         return this.fallbackToLocalStorage(endpoint, options);
       }
       
@@ -135,6 +178,23 @@ export class ScoreDatabase {
   // Add a new score and return the updated leaderboard
   async addScore(playerName, score) {
     try {
+      // iOS pre-connectivity test
+      if (this.isIOS) {
+        console.log(`🍎 iOS: Pre-testing connectivity before adding score...`);
+        const connectivityOk = await this.testConnectivity();
+        if (!connectivityOk) {
+          console.log(`🍎 iOS: Connectivity test failed, using localStorage directly`);
+          return this.fallbackToLocalStorage('/scores', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: playerName.trim() || 'Anonymous',
+              score: score
+            })
+          });
+        }
+        console.log(`🍎 iOS: Connectivity test passed, proceeding with server request`);
+      }
+
       const response = await this.makeRequest('/scores', {
         method: 'POST',
         body: JSON.stringify({
@@ -220,12 +280,53 @@ export class ScoreDatabase {
     }
   }
 
-  // Check server health
+  // Check server health with iOS-specific handling
   async checkServerHealth() {
     try {
-      const response = await this.makeRequest('/health');
-      return response.success;
+      console.log(`🔍 Checking server health${this.isIOS ? ' (iOS mode)' : ''}...`);
+      
+      // Use shorter timeout for iOS to fail fast and fallback
+      const timeout = this.isIOS ? 5000 : 10000;
+      
+      const response = await Promise.race([
+        this.makeRequest('/health'),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Health check timeout')), timeout)
+        )
+      ]);
+      
+      const isHealthy = response.success;
+      console.log(`💚 Server health check: ${isHealthy ? 'PASS' : 'FAIL'}`);
+      return isHealthy;
     } catch (error) {
+      console.warn(`❤️‍🩹 Server health check failed:`, error.message);
+      
+      if (this.isIOS) {
+        console.log(`🍎 iOS fallback mode activated due to health check failure`);
+      }
+      
+      return false;
+    }
+  }
+
+  // iOS-specific method to test connectivity before operations
+  async testConnectivity() {
+    if (!this.isIOS) {
+      return true; // Skip for non-iOS
+    }
+    
+    try {
+      console.log(`🍎 Testing iOS connectivity...`);
+      const startTime = Date.now();
+      
+      const isHealthy = await this.checkServerHealth();
+      const duration = Date.now() - startTime;
+      
+      console.log(`🍎 iOS connectivity test: ${isHealthy ? 'PASS' : 'FAIL'} (${duration}ms)`);
+      
+      return isHealthy;
+    } catch (error) {
+      console.warn(`🍎 iOS connectivity test failed:`, error);
       return false;
     }
   }
