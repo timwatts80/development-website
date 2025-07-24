@@ -11,6 +11,10 @@
       <div class="game-container">
         <div class="game-header">
           <h1>Tetris</h1>
+          <div id="server-status" class="server-status">
+            <span class="status-indicator" id="status-indicator">●</span>
+            <span id="status-text">Checking server...</span>
+          </div>
         </div>
         <div class="game-content">
           <div class="game-main">
@@ -65,10 +69,31 @@
             </div>
           </div>
         </div>
+        <!-- Player Name Input Modal -->
+        <div id="name-modal" class="game-modal">
+          <div class="modal-content">
+            <h2>Welcome to Tetris!</h2>
+            <p>Enter your name to start playing:</p>
+            <input type="text" id="player-name" maxlength="20" placeholder="Enter your name" />
+            <button id="start-game-btn" class="game-button">Start Game</button>
+          </div>
+        </div>
+        <!-- Game Over Modal -->
         <div id="game-over" class="game-over hidden">
           <h2>Game Over!</h2>
           <p>Final Score: <span id="final-score">0</span></p>
           <button id="restart-btn" class="game-button">Play Again</button>
+          <button id="show-leaderboard-btn" class="game-button">View Leaderboard</button>
+        </div>
+        <!-- Leaderboard Modal -->
+        <div id="leaderboard-modal" class="game-modal hidden">
+          <div class="modal-content">
+            <h2>🏆 Top 10 Scores 🏆</h2>
+            <div id="leaderboard-list"></div>
+            <div class="modal-buttons">
+              <button id="close-leaderboard-btn" class="game-button">Play Again</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

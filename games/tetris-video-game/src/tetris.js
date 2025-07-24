@@ -2,6 +2,19 @@
 const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
 const CELL_SIZE = 30;
+
+// Speed progression constants
+const INITIAL_SPEED = 1000; // Starting drop interval in ms
+const SPEED_CURVE = {
+  LEVEL_1_TO_10: 100,  // Decrease by 100ms per level for levels 1-10 (more aggressive!)
+  LEVEL_11_TO_20: 20,  // Decrease by 20ms per level for levels 11-20
+  LEVEL_21_PLUS: 10,   // Decrease by 10ms per level for levels 21+
+  MIN_SPEED: 50        // Minimum drop interval
+};
+
+// Import database functionality
+import { ScoreDatabase } from './database.js';
+
 const COLORS = {
   0: '#000000', // Empty
   1: '#FF0000', // I-piece (Red)
@@ -97,15 +110,22 @@ export class TetrisGame {
     this.lines = 0;
     this.level = 1;
     this.dropCounter = 0;
-    this.dropInterval = 1000; // milliseconds
+    this.dropInterval = INITIAL_SPEED; // milliseconds
     this.lastTime = 0;
     this.gameRunning = false;
     this.gamePaused = false;
     this.gameStarted = false;
     this.bubbleEffects = []; // Array to store active bubble effects
+    this.playerName = '';
+    this.database = new ScoreDatabase();
+    this.lastScoreResult = null;
+    this.serverConnected = false;
     
     // Initialize empty board
     this.initBoard();
+    
+    // Check server connection on startup
+    this.checkServerConnection();
   }
 
   init() {
@@ -121,6 +141,9 @@ export class TetrisGame {
     // Initial render
     this.render();
     this.updateUI();
+    
+    // Show name input modal
+    this.showNameModal();
   }
 
   initBoard() {
@@ -131,10 +154,22 @@ export class TetrisGame {
 
   setupEventListeners() {
     // Button event listeners
-    document.getElementById('start-btn').addEventListener('click', () => this.startGame());
+    document.getElementById('start-btn').addEventListener('click', () => this.startGame().catch(console.error));
     document.getElementById('pause-btn').addEventListener('click', () => this.togglePause());
     document.getElementById('reset-btn').addEventListener('click', () => this.resetGame());
     document.getElementById('restart-btn').addEventListener('click', () => this.restartGame());
+
+    // Modal event listeners
+    document.getElementById('start-game-btn').addEventListener('click', () => this.handleNameSubmit());
+    document.getElementById('show-leaderboard-btn').addEventListener('click', () => this.showLeaderboard());
+    document.getElementById('close-leaderboard-btn').addEventListener('click', () => this.closeLeaderboard());
+
+    // Player name input enter key
+    document.getElementById('player-name').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.handleNameSubmit();
+      }
+    });
 
     // Keyboard event listeners
     document.addEventListener('keydown', (e) => this.handleKeyPress(e));
@@ -165,7 +200,7 @@ export class TetrisGame {
         break;
       case 'Space':
         event.preventDefault();
-        this.hardDrop();
+        this.hardDrop().catch(console.error);
         break;
       case 'KeyP':
         event.preventDefault();
@@ -270,7 +305,7 @@ export class TetrisGame {
         this.rotatePiece();
         break;
       case 'hardDrop':
-        this.hardDrop();
+        this.hardDrop().catch(console.error);
         break;
     }
   }
@@ -329,11 +364,11 @@ export class TetrisGame {
     }
   }
 
-  startGame() {
+  async startGame() {
     this.gameRunning = true;
     this.gameStarted = true;
     this.gamePaused = false;
-    this.spawnPiece();
+    await this.spawnPiece();
     this.spawnNextPiece();
     this.updateButtons();
     this.gameLoop();
@@ -355,7 +390,7 @@ export class TetrisGame {
     this.score = 0;
     this.lines = 0;
     this.level = 1;
-    this.dropInterval = 1000;
+    this.dropInterval = INITIAL_SPEED;
     this.bubbleEffects = []; // Clear bubble effects
     this.initBoard();
     this.currentPiece = null;
@@ -368,7 +403,8 @@ export class TetrisGame {
 
   restartGame() {
     this.resetGame();
-    this.startGame();
+    this.hideGameOver();
+    this.showNameModal();
   }
 
   updateButtons() {
@@ -396,7 +432,7 @@ export class TetrisGame {
     });
   }
 
-  spawnPiece() {
+  async spawnPiece() {
     if (this.nextPiece) {
       this.currentPiece = this.nextPiece;
     } else {
@@ -406,7 +442,7 @@ export class TetrisGame {
     
     // Check for game over
     if (this.checkCollision(this.currentPiece, 0, 0)) {
-      this.gameOver();
+      await this.gameOver();
     }
   }
 
@@ -503,13 +539,13 @@ export class TetrisGame {
     this.movePiece(0, 1);
   }
 
-  hardDrop() {
+  async hardDrop() {
     if (!this.currentPiece) return;
     
     while (!this.checkCollision(this.currentPiece, 0, 1)) {
       this.currentPiece.y++;
     }
-    this.placePiece();
+    await this.placePiece();
   }
 
   checkCollision(piece, dx, dy) {
@@ -538,7 +574,7 @@ export class TetrisGame {
     return false;
   }
 
-  placePiece() {
+  async placePiece() {
     if (!this.currentPiece) return;
     
     // Place piece on board
@@ -558,7 +594,7 @@ export class TetrisGame {
     this.clearLines();
     
     // Spawn new piece
-    this.spawnPiece();
+    await this.spawnPiece();
     this.render();
   }
 
@@ -602,9 +638,48 @@ export class TetrisGame {
   updateLevel() {
     const newLevel = Math.floor(this.lines / 10) + 1;
     if (newLevel > this.level) {
+      const oldLevel = this.level;
       this.level = newLevel;
-      this.dropInterval = Math.max(50, 1000 - (this.level - 1) * 50);
+      
+      // Calculate new drop interval with refined speed progression
+      let newDropInterval;
+      
+      if (this.level <= 10) {
+        // Levels 1-10: More aggressive speed increase for early game
+        newDropInterval = INITIAL_SPEED - (this.level - 1) * SPEED_CURVE.LEVEL_1_TO_10;
+      } else if (this.level <= 20) {
+        // Levels 11-20: Moderate speed increase for mid game
+        const level10Speed = INITIAL_SPEED - 9 * SPEED_CURVE.LEVEL_1_TO_10; // Speed at level 10
+        newDropInterval = level10Speed - (this.level - 10) * SPEED_CURVE.LEVEL_11_TO_20;
+      } else {
+        // Levels 21+: Small speed increase for late game
+        const level20Speed = INITIAL_SPEED - 9 * SPEED_CURVE.LEVEL_1_TO_10 - 10 * SPEED_CURVE.LEVEL_11_TO_20;
+        newDropInterval = level20Speed - (this.level - 20) * SPEED_CURVE.LEVEL_21_PLUS;
+      }
+      
+      // Ensure minimum speed
+      this.dropInterval = Math.max(SPEED_CURVE.MIN_SPEED, newDropInterval);
+      
+      console.log(`🎉 Level Up! Level ${oldLevel} → ${this.level} (Speed: ${this.dropInterval}ms)`);
+      
+      // Create visual feedback for level up
+      this.createLevelUpEffect();
     }
+  }
+
+  // Create visual effect when leveling up
+  createLevelUpEffect() {
+    // Add a level up bubble effect
+    const effect = {
+      x: BOARD_WIDTH / 2,
+      y: 5,
+      text: `LEVEL ${this.level}!`,
+      life: 120, // frames
+      color: '#00ffff',
+      size: 1.5,
+      type: 'levelup'
+    };
+    this.bubbleEffects.push(effect);
   }
 
   createBubbleEffects(clearedLinePositions) {
@@ -635,17 +710,26 @@ export class TetrisGame {
   updateBubbleEffects() {
     // Update and remove expired bubble effects
     this.bubbleEffects = this.bubbleEffects.filter(bubble => {
-      // Update position
-      bubble.x += bubble.vx;
-      bubble.y += bubble.vy;
-      bubble.vy += 0.1; // Gravity
-      
-      // Update life and alpha
-      bubble.life--;
-      bubble.alpha = bubble.life / bubble.maxLife;
-      bubble.size *= 0.98; // Slightly shrink over time
-      
-      return bubble.life > 0;
+      if (bubble.type === 'levelup') {
+        // Level up effects move upward and fade
+        bubble.y -= 0.05;
+        bubble.life--;
+        bubble.alpha = bubble.life / 120; // 120 frames total
+        bubble.size += 0.01; // Grow slightly
+        return bubble.life > 0;
+      } else {
+        // Regular bubble effects
+        bubble.x += bubble.vx;
+        bubble.y += bubble.vy;
+        bubble.vy += 0.1; // Gravity
+        
+        // Update life and alpha
+        bubble.life--;
+        bubble.alpha = bubble.life / bubble.maxLife;
+        bubble.size *= 0.98; // Slightly shrink over time
+        
+        return bubble.life > 0;
+      }
     });
   }
 
@@ -654,25 +738,52 @@ export class TetrisGame {
       this.ctx.save();
       this.ctx.globalAlpha = bubble.alpha;
       
-      // Draw bubble with gradient
-      const gradient = this.ctx.createRadialGradient(
-        bubble.x, bubble.y, 0,
-        bubble.x, bubble.y, bubble.size
-      );
-      gradient.addColorStop(0, bubble.color + '80'); // Semi-transparent center
-      gradient.addColorStop(0.7, bubble.color + '40');
-      gradient.addColorStop(1, bubble.color + '00'); // Transparent edge
-      
-      this.ctx.fillStyle = gradient;
-      this.ctx.beginPath();
-      this.ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
-      this.ctx.fill();
-      
-      // Add a bright center
-      this.ctx.fillStyle = bubble.color + 'FF';
-      this.ctx.beginPath();
-      this.ctx.arc(bubble.x, bubble.y, bubble.size * 0.3, 0, Math.PI * 2);
-      this.ctx.fill();
+      if (bubble.type === 'levelup') {
+        // Draw level up text effect
+        this.ctx.font = `bold ${bubble.size * 16}px system-ui`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        
+        // Draw text with glow effect
+        this.ctx.shadowColor = bubble.color;
+        this.ctx.shadowBlur = 20;
+        this.ctx.fillStyle = bubble.color;
+        this.ctx.fillText(
+          bubble.text,
+          bubble.x * CELL_SIZE + CELL_SIZE / 2,
+          bubble.y * CELL_SIZE + CELL_SIZE / 2
+        );
+        
+        // Draw text outline
+        this.ctx.shadowBlur = 0;
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeText(
+          bubble.text,
+          bubble.x * CELL_SIZE + CELL_SIZE / 2,
+          bubble.y * CELL_SIZE + CELL_SIZE / 2
+        );
+      } else {
+        // Draw regular bubble with gradient
+        const gradient = this.ctx.createRadialGradient(
+          bubble.x, bubble.y, 0,
+          bubble.x, bubble.y, bubble.size
+        );
+        gradient.addColorStop(0, bubble.color + '80'); // Semi-transparent center
+        gradient.addColorStop(0.7, bubble.color + '40');
+        gradient.addColorStop(1, bubble.color + '00'); // Transparent edge
+        
+        this.ctx.fillStyle = gradient;
+        this.ctx.beginPath();
+        this.ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Add a bright center
+        this.ctx.fillStyle = bubble.color + 'FF';
+        this.ctx.beginPath();
+        this.ctx.arc(bubble.x, bubble.y, bubble.size * 0.3, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
       
       this.ctx.restore();
     });
@@ -691,7 +802,8 @@ export class TetrisGame {
     if (this.dropCounter > this.dropInterval) {
       if (this.currentPiece) {
         if (this.checkCollision(this.currentPiece, 0, 1)) {
-          this.placePiece();
+          // Handle async placePiece without blocking the game loop
+          this.placePiece().catch(console.error);
         } else {
           this.currentPiece.y++;
           this.render();
@@ -706,9 +818,10 @@ export class TetrisGame {
     requestAnimationFrame((time) => this.gameLoop(time));
   }
 
-  gameOver() {
+  async gameOver() {
     this.gameRunning = false;
     this.gameStarted = false;
+    await this.saveScore();
     this.showGameOver();
     this.updateButtons();
   }
@@ -720,6 +833,123 @@ export class TetrisGame {
 
   hideGameOver() {
     document.getElementById('game-over').classList.add('hidden');
+  }
+
+  // Modal handling methods
+  showNameModal() {
+    document.getElementById('name-modal').classList.remove('hidden');
+    document.getElementById('player-name').focus();
+  }
+
+  hideNameModal() {
+    document.getElementById('name-modal').classList.add('hidden');
+  }
+
+  handleNameSubmit() {
+    const nameInput = document.getElementById('player-name');
+    const name = nameInput.value.trim();
+    
+    if (name.length === 0) {
+      alert('Please enter your name!');
+      nameInput.focus();
+      return;
+    }
+    
+    this.playerName = name;
+    this.hideNameModal();
+    nameInput.value = ''; // Clear for next time
+  }
+
+  async saveScore() {
+    if (this.playerName && this.score > 0) {
+      try {
+        const result = await this.database.addScore(this.playerName, this.score);
+        console.log('Score saved:', result);
+        
+        // Store the result for the leaderboard display
+        this.lastScoreResult = result;
+        
+        // Show a notification if they made the leaderboard
+        if (result.madeLeaderboard) {
+          if (result.isNewRecord) {
+            console.log('🎉 NEW HIGH SCORE! 🎉');
+          } else {
+            console.log(`Made the leaderboard at rank #${result.rank}!`);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to save score:', error);
+        this.lastScoreResult = null;
+      }
+    }
+  }
+
+  async showLeaderboard() {
+    this.hideGameOver();
+    try {
+      const leaderboard = await this.database.getLeaderboard();
+      this.renderLeaderboard(leaderboard);
+      document.getElementById('leaderboard-modal').classList.remove('hidden');
+    } catch (error) {
+      console.error('Failed to load leaderboard:', error);
+      // Show error message in leaderboard
+      const container = document.getElementById('leaderboard-list');
+      container.innerHTML = '<p style="text-align: center; color: #ff6b6b;">Failed to load leaderboard. Please try again.</p>';
+      document.getElementById('leaderboard-modal').classList.remove('hidden');
+    }
+  }
+
+  closeLeaderboard() {
+    document.getElementById('leaderboard-modal').classList.add('hidden');
+    this.showNameModal(); // Ask for name again for next game
+  }
+
+  renderLeaderboard(scores) {
+    const container = document.getElementById('leaderboard-list');
+    
+    if (scores.length === 0) {
+      container.innerHTML = '<p style="text-align: center; color: #888;">No scores yet!</p>';
+      return;
+    }
+    
+    container.innerHTML = scores.map((entry, index) => {
+      const isCurrentPlayer = entry.name === this.playerName;
+      const className = isCurrentPlayer ? 'leaderboard-entry current-player' : 'leaderboard-entry';
+      
+      return `
+        <div class="${className}">
+          <span class="leaderboard-rank">#${entry.rank}</span>
+          <span class="leaderboard-name">${entry.name}</span>
+          <span class="leaderboard-score">${entry.score.toLocaleString()}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Check server connection
+  async checkServerConnection() {
+    try {
+      this.serverConnected = await this.database.checkServerHealth();
+      this.updateServerStatus();
+    } catch (error) {
+      this.serverConnected = false;
+      this.updateServerStatus();
+    }
+  }
+
+  updateServerStatus() {
+    const indicator = document.getElementById('status-indicator');
+    const statusText = document.getElementById('status-text');
+    
+    if (this.serverConnected) {
+      indicator.className = 'status-indicator connected';
+      statusText.textContent = 'Global Leaderboard';
+    } else {
+      indicator.className = 'status-indicator disconnected';
+      statusText.textContent = 'Local Scores Only';
+    }
+    
+    console.log(`Server status: ${this.serverConnected ? 'Connected' : 'Offline (using local storage)'}`);
   }
 
   updateUI() {
