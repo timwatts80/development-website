@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Tetris Game</title>
+  </head>
+  <body>
+    <div id="app">
+      <div class="game-container">
+        <div class="game-header">
+          <h1>Tetris</h1>
+          <div class="game-info">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div class="lines">Lines: <span id="lines">0</span></div>
+            <div class="level">Level: <span id="level">1</span></div>
+          </div>
+        </div>
+        <div class="game-content">
+          <div class="game-board-container">
+            <canvas id="game-board" width="300" height="600"></canvas>
+            <!-- Next Piece View - Top Left Corner -->
+            <div class="next-piece-overlay">
+              <h4>Next</h4>
+              <canvas id="next-piece" width="80" height="80"></canvas>
+            </div>
+          </div>
+          <!-- Mobile Touch Controls - Between game board and buttons -->
+          <div class="mobile-controls" id="mobile-controls">
+            <div class="control-row">
+              <button id="rotate-btn" class="touch-btn rotate-btn">↻</button>
+              <button id="hard-drop-btn" class="touch-btn hard-drop-btn">⬇</button>
+            </div>
+            <div class="control-row">
+              <button id="left-btn" class="touch-btn move-btn">←</button>
+              <button id="down-btn" class="touch-btn move-btn">↓</button>
+              <button id="right-btn" class="touch-btn move-btn">→</button>
+            </div>
+          </div>
+          <div class="game-sidebar">
+            <button id="start-btn" class="game-button">Start</button>
+            <button id="pause-btn" class="game-button" disabled>Pause</button>
+            <button id="reset-btn" class="game-button">Reset</button>
+            <div class="controls desktop-controls">
+              <h3>Controls</h3>
+              <p>← → Move</p>
+              <p>↓ Soft Drop</p>
+              <p>↑ Rotate</p>
+              <p>Space Hard Drop</p>
+              <p>P Pause</p>
+            </div>
+          </div>
+        </div>
+        <div id="game-over" class="game-over hidden">
+          <h2>Game Over!</h2>
+          <p>Final Score: <span id="final-score">0</span></p>
+          <button id="restart-btn" class="game-button">Play Again</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
