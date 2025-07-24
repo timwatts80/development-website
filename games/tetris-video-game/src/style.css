@@ -15,17 +15,19 @@
 
 body {
   margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%);
 }
 
 #app {
+  width: calc(100vw - 16px);
   margin: 0 auto;
-  padding: 2rem;
   text-align: center;
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .game-container {
@@ -34,6 +36,10 @@ body {
   padding: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   border: 2px solid #4a5568;
+  max-height: 95vh;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 800px;
 }
 
 .game-header {
@@ -70,13 +76,16 @@ body {
 
 .game-content {
   display: flex;
-  gap: 20px;
   justify-content: center;
   align-items: flex-start;
 }
 
 .game-board-container {
   position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #game-board {
@@ -84,38 +93,37 @@ body {
   border-radius: 8px;
   background: #000000;
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  height: 100%;
+  width: auto;
+  max-width: 100%;
 }
 
 .next-piece-overlay {
-  position: absolute;
-  top: 10px;
-  left: 10px;
+  position: fixed;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(5px);
-  padding: 10px;
-  border-radius: 8px;
+  padding: 6px;
+  border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  z-index: 5;
+  z-index: 1000;
   pointer-events: none;
 }
 
 .next-piece-overlay h4 {
-  margin: 0 0 8px 0;
-  font-size: 0.9em;
+  margin: 0 0 4px 0;
+  font-size: 0.7em;
   color: #fff;
   text-align: center;
 }
 
 .next-piece-overlay canvas {
   display: block;
-  border-radius: 4px;
-}
-
-.game-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-width: 150px;
+  border-radius: 3px;
+  width: 60px;
+  height: 60px;
 }
 
 .next-piece {
@@ -164,14 +172,15 @@ body {
   background: linear-gradient(145deg, #4a5568, #2d3748);
   border: 2px solid #4a5568;
   color: white;
-  padding: 12px 20px;
-  font-size: 1em;
+  padding: 8px 12px;
+  font-size: 0.85em;
   font-weight: bold;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin: 5px 0;
+  margin: 2px 0;
   width: 100%;
+  min-width: 70px;
 }
 
 .game-button:hover:not(:disabled) {
@@ -242,6 +251,8 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
+    max-height: 100vh;
+    overflow-y: auto;
   }
 
   .game-content {
@@ -259,60 +270,33 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 0;
+    height: 100%;
   }
 
   #game-board {
     max-height: calc(100vh - 350px); /* Reserve more space for header, buttons, and mobile controls */
     max-width: calc(100vw - 20px);
-    height: auto;
+    height: 100%;
     width: auto;
   }
 
   .next-piece-overlay {
-    top: 5px;
-    left: 5px;
-    padding: 8px;
+    top: 45%;
+    right: 15px;
+    left: auto;
+    padding: 5px;
   }
 
   .next-piece-overlay h4 {
-    font-size: 0.8em;
-    margin-bottom: 5px;
+    font-size: 0.65em;
+    margin-bottom: 3px;
+  }
+
+  .next-piece-overlay canvas {
+    width: 50px;
+    height: 50px;
   }
   
-  .game-sidebar {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    min-width: auto;
-    width: 100%;
-    max-width: 300px;
-    margin-top: 10px;
-    gap: 10px;
-    order: 3;
-  }
-
-  .next-piece {
-    margin-right: 0;
-    flex: 0 0 auto;
-    min-width: 120px;
-    display: none; /* Hide the sidebar next piece on mobile */
-  }
-
-  .game-button {
-    flex: 1;
-    min-width: 80px;
-    max-width: 100px;
-    padding: 8px 12px;
-    font-size: 0.9em;
-    margin: 2px;
-  }
-
-  .desktop-controls {
-    display: none;
-  }
-
-  /* Mobile controls positioned between game board and buttons */
   .mobile-controls {
     display: flex;
     position: static;
@@ -328,6 +312,25 @@ body {
     margin: 10px 0;
     order: 2;
     box-sizing: border-box;
+  }
+
+  .controls-layout {
+    gap: 15px;
+  }
+
+  .game-sidebar {
+    min-width: 80px;
+    gap: 6px;
+  }
+
+  .game-sidebar .game-button {
+    padding: 5px 8px;
+    font-size: 0.75em;
+    min-width: 60px;
+  }
+
+  .desktop-controls {
+    display: none;
   }
   
   .game-header h1 {
@@ -350,27 +353,70 @@ body {
 
   #game-board {
     max-width: calc(100vw - 20px);
-    height: auto;
+    height: 100%;
     display: block;
   }
 
   /* Game board container to position overlay controls */
   .game-board-container {
     position: relative;
-    display: inline-block;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 
-/* Mobile Touch Controls - Hidden by default, shown on mobile */
+/* Mobile Touch Controls - Always visible for testing */
 .mobile-controls {
-  display: none;
+  display: flex;
+  justify-content: center;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 10px 0;
+}
+
+.controls-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+}
+
+.hard-drop-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.game-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 90px;
+  align-items: center;
+}
+
+.diamond-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .control-row {
   display: flex;
-  justify-content: space-evenly;
-  gap: 15px;
+  justify-content: center;
+  gap: 20px;
   width: 100%;
+  margin: 0;
+}
+
+/* Special spacing for the middle row (left/right) */
+.control-row:nth-child(2) {
+  gap: 48px;
 }
 
 .touch-btn {
@@ -412,6 +458,9 @@ body {
 
 .hard-drop-btn {
   background: linear-gradient(145deg, rgba(240, 147, 251, 0.8), rgba(245, 87, 108, 0.8));
+  width: 100px !important;
+  height: 100px !important;
+  font-size: 2.4em !important;
 }
 
 .move-btn {
@@ -443,23 +492,31 @@ body {
     flex: 1;
   }
 
-  .game-sidebar {
-    flex-direction: column;
-    margin-top: 0;
-    margin-left: 10px;
-    width: auto;
-    max-width: 150px;
-    gap: 5px;
-  }
-
   .mobile-controls {
     position: static;
     margin-top: 0;
     margin-left: 10px;
-    max-width: 160px;
+    max-width: 200px;
     background: rgba(0, 0, 0, 0.8);
     border-radius: 15px;
     flex-shrink: 0;
+  }
+
+  .controls-layout {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .game-sidebar {
+    flex-direction: row;
+    gap: 5px;
+    min-width: auto;
+  }
+
+  .game-sidebar .game-button {
+    padding: 3px 6px;
+    font-size: 0.65em;
+    min-width: 45px;
   }
 
   .control-row {
@@ -499,11 +556,6 @@ body {
 
   .next-piece {
     margin-bottom: 5px;
-  }
-
-  #next-piece {
-    width: 80px;
-    height: 80px;
   }
 }
 

@@ -28,27 +28,35 @@
           </div>
           <!-- Mobile Touch Controls - Between game board and buttons -->
           <div class="mobile-controls" id="mobile-controls">
-            <div class="control-row">
-              <button id="rotate-btn" class="touch-btn rotate-btn">↻</button>
-              <button id="hard-drop-btn" class="touch-btn hard-drop-btn">⬇</button>
-            </div>
-            <div class="control-row">
-              <button id="left-btn" class="touch-btn move-btn">←</button>
-              <button id="down-btn" class="touch-btn move-btn">↓</button>
-              <button id="right-btn" class="touch-btn move-btn">→</button>
-            </div>
-          </div>
-          <div class="game-sidebar">
-            <button id="start-btn" class="game-button">Start</button>
-            <button id="pause-btn" class="game-button" disabled>Pause</button>
-            <button id="reset-btn" class="game-button">Reset</button>
-            <div class="controls desktop-controls">
-              <h3>Controls</h3>
-              <p>← → Move</p>
-              <p>↓ Soft Drop</p>
-              <p>↑ Rotate</p>
-              <p>Space Hard Drop</p>
-              <p>P Pause</p>
+            <div class="controls-layout">
+              <div class="hard-drop-section">
+                <button id="hard-drop-btn" class="touch-btn hard-drop-btn">⬇</button>
+              </div>
+              <div class="game-sidebar">
+                <button id="start-btn" class="game-button">Start</button>
+                <button id="pause-btn" class="game-button" disabled>Pause</button>
+                <button id="reset-btn" class="game-button">Reset</button>
+                <div class="controls desktop-controls">
+                  <h3>Controls</h3>
+                  <p>← → Move</p>
+                  <p>↓ Soft Drop</p>
+                  <p>↑ Rotate</p>
+                  <p>Space Hard Drop</p>
+                  <p>P Pause</p>
+                </div>
+              </div>
+              <div class="diamond-controls">
+                <div class="control-row">
+                  <button id="rotate-btn" class="touch-btn rotate-btn">↻</button>
+                </div>
+                <div class="control-row">
+                  <button id="left-btn" class="touch-btn move-btn">←</button>
+                  <button id="right-btn" class="touch-btn move-btn">→</button>
+                </div>
+                <div class="control-row">
+                  <button id="down-btn" class="touch-btn move-btn">↓</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
