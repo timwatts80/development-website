@@ -1,8 +1,23 @@
 // Server-based database for Tetris scores
 export class ScoreDatabase {
   constructor() {
-    this.baseUrl = 'http://localhost:3001/api';
+    // Use environment-aware API URL
+    const isDevelopment = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.hostname === '';
+    
+    if (isDevelopment) {
+      // Development: Use localhost with port 3001
+      this.baseUrl = 'http://localhost:3001/api';
+    } else {
+      // Production: Use Vercel serverless functions or same origin
+      // This will work with Vercel's /api directory structure
+      this.baseUrl = `${window.location.origin}/api`;
+    }
+    
     this.maxScores = 10;
+    console.log(`🌐 ScoreDatabase initialized with API URL: ${this.baseUrl}`);
+    console.log(`🔧 Environment: ${isDevelopment ? 'Development' : 'Production'}`);
   }
 
   // Helper method to make API requests
@@ -25,11 +40,17 @@ export class ScoreDatabase {
 
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error(`❌ API request failed for ${this.baseUrl}${endpoint}:`, error);
       
       // If server is not available, fall back to localStorage
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        console.warn('Server unavailable, falling back to localStorage');
+      if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+        console.warn(`⚠️  Server unavailable at ${this.baseUrl}, falling back to localStorage`);
+        return this.fallbackToLocalStorage(endpoint, options);
+      }
+      
+      // Network or CORS errors
+      if (error.name === 'TypeError' || error.message.includes('NetworkError') || error.message.includes('CORS')) {
+        console.warn(`🌐 Network/CORS error connecting to ${this.baseUrl}, falling back to localStorage`);
         return this.fallbackToLocalStorage(endpoint, options);
       }
       
