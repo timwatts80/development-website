@@ -78,6 +78,7 @@ body {
   justify-content: flex-start;
   flex: 0 0 auto;
   margin-right: auto;
+  min-width: 300px;
 }
 
 #game-board {
@@ -109,9 +110,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  min-width: 200px;
-  max-width: 250px;
+  min-width: 180px;
   flex: 1;
+  max-width: 300px;
 }
 
 .right-sidebar .game-info {
@@ -293,18 +294,20 @@ body {
 
   .right-sidebar {
     order: 2;
-    min-width: 75px;
-    max-width: 130px;
+    min-width: 70px;
+    max-width: none;
     width: auto;
     margin-bottom: 0;
-    flex: 0 0 auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
   }
 
   .right-sidebar .game-info {
     flex-direction: column;
     flex-wrap: wrap;
     gap: 8px;
-    padding-right: 8px;
     justify-content: center;
   }
 
@@ -317,13 +320,15 @@ body {
   }
 
   .game-board-container {
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 0;
     height: 100%;
     order: 1;
+    min-width: 200px;
+    max-width: 350px;
   }
 
   .next-piece-overlay {
@@ -338,9 +343,8 @@ body {
 
   #game-board {
     max-height: calc(100vh - 350px); /* Reserve more space for header, buttons, and mobile controls */
-    max-width: calc(100vw - 20px);
     height: 100%;
-    width: auto;
+    width: 100%;
   }
 
   .next-piece-overlay h4 {
@@ -372,16 +376,21 @@ body {
 
   .controls-layout {
     gap: 15px;
+    justify-content: space-around;
+    max-width: none;
   }
 
   .game-sidebar {
-    min-width: 80px;
-    gap: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: auto;
+    align-items: stretch;
   }
 
   .game-sidebar .game-button {
-    padding: 4px 6px;
-    font-size: 0.65em;
+    padding: 8px 12px;
+    font-size: 0.8em;
     min-width: 0;
     width: 100%;
     white-space: nowrap;
@@ -422,6 +431,8 @@ body {
   border-radius: 15px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   margin: 10px 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .controls-layout {
@@ -441,9 +452,8 @@ body {
 .game-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 90px;
-  align-items: center;
+  gap: 12px;
+  align-items: stretch;
 }
 
 .diamond-controls {
@@ -554,15 +564,16 @@ body {
   }
 
   .game-sidebar {
-    flex-direction: row;
-    gap: 5px;
+    flex-direction: column;
+    gap: 8px;
     min-width: auto;
   }
 
   .game-sidebar .game-button {
-    padding: 3px 6px;
-    font-size: 0.65em;
-    min-width: 45px;
+    padding: 6px 10px;
+    font-size: 0.75em;
+    min-width: 0;
+    width: 100%;
   }
 
   .control-row {
