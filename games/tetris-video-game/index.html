@@ -11,19 +11,23 @@
       <div class="game-container">
         <div class="game-header">
           <h1>Tetris</h1>
-          <div class="game-info">
-            <div class="score">Score: <span id="score">0</span></div>
-            <div class="lines">Lines: <span id="lines">0</span></div>
-            <div class="level">Level: <span id="level">1</span></div>
-          </div>
         </div>
         <div class="game-content">
-          <div class="game-board-container">
-            <canvas id="game-board" width="300" height="600"></canvas>
-            <!-- Next Piece View - Top Left Corner -->
-            <div class="next-piece-overlay">
-              <h4>Next</h4>
-              <canvas id="next-piece" width="80" height="80"></canvas>
+          <div class="game-main">
+            <div class="game-board-container">
+              <canvas id="game-board" width="300" height="600"></canvas>
+            </div>
+            <div class="right-sidebar">
+              <div class="game-info">
+                <div class="score">Score: <span id="score">0</span></div>
+                <div class="lines">Lines: <span id="lines">0</span></div>
+                <div class="level">Level: <span id="level">1</span></div>
+              </div>
+              <!-- Next Piece View -->
+              <div class="next-piece-overlay">
+                <h4>Next</h4>
+                <canvas id="next-piece" width="80" height="80"></canvas>
+              </div>
             </div>
           </div>
           <!-- Mobile Touch Controls - Between game board and buttons -->
