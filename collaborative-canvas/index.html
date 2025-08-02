@@ -27,17 +27,39 @@
                     </div>
                 </div>
                 
-                                <div class="toolbar-section">
-                    <div class="tool-group">
-                        <label for="brush-size">Brush Size:</label>
+                <div class="toolbar-section">
+                    <div class="tool-group slider-group" id="brush-size-group">
+                        <label for="brush-size">Size:</label>
                         <input type="range" id="brush-size" min="1" max="50" value="5">
-                        <span id="brush-size-display">5px</span>
+                        <span id="brush-size-display" class="value-display">5px</span>
+                        
+                        <!-- Mobile Slider Popup -->
+                        <div class="mobile-slider-overlay" id="brush-size-mobile-slider">
+                            <div class="mobile-slider-container">
+                                <div class="mobile-slider-title">Size</div>
+                                <div class="mobile-slider-track">
+                                    <div class="mobile-slider-thumb"></div>
+                                </div>
+                                <div class="mobile-slider-value">5px</div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="tool-group">
+                    <div class="tool-group slider-group" id="taper-group">
                         <label for="taper">Taper:</label>
                         <input type="range" id="taper" min="0" max="100" value="50">
-                        <span id="taper-display">50%</span>
+                        <span id="taper-display" class="value-display">50%</span>
+                        
+                        <!-- Mobile Slider Popup -->
+                        <div class="mobile-slider-overlay" id="taper-mobile-slider">
+                            <div class="mobile-slider-container">
+                                <div class="mobile-slider-title">Taper</div>
+                                <div class="mobile-slider-track">
+                                    <div class="mobile-slider-thumb"></div>
+                                </div>
+                                <div class="mobile-slider-value">50%</div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="tool-group">
