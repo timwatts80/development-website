@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: './', // Use relative paths for assets
+  base: '/tetris/', // Use absolute path for deployment
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
