@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Development website showcasing games and projects",
   "scripts": {
-    "build": "mkdir -p public/tetris public/collaborative-canvas && cp index.html public/ && cd tetris && npm install && npm run build && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm install && npm run build && cp -r dist/* ../public/collaborative-canvas/",
+    "build": "echo 'Static files already built and ready for deployment'",
+    "build-local": "mkdir -p public/tetris public/collaborative-canvas && cp index.html public/ && cd tetris && npm install && npm run build && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm install && npm run build && cp -r dist/* ../public/collaborative-canvas/",
     "dev": "cd tetris && npm run dev",
     "dev:canvas": "cd collaborative-canvas && npm run dev",
     "preview": "cd tetris && npm run preview",

@@ -1,43 +1,35 @@
 {
   "version": 2,
+  "name": "development-website",
   "framework": null,
+  "installCommand": "echo 'No dependencies to install for static site'",
   "buildCommand": "npm run build",
   "outputDirectory": "public",
-  "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     },
     {
-      "src": "/tetris",
-      "dest": "/public/tetris/index.html"
+      "src": "/tetris/?",
+      "dest": "/tetris/index.html"
     },
     {
-      "src": "/collaborative-canvas",
-      "dest": "/public/collaborative-canvas/index.html"
+      "src": "/collaborative-canvas/?",
+      "dest": "/collaborative-canvas/index.html"
     },
     {
       "src": "/",
-      "dest": "/public/index.html"
+      "dest": "/index.html"
     },
     {
       "src": "/(.*)",
-      "dest": "/public/$1"
+      "dest": "/$1"
     }
-  ],
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  ]
 }
