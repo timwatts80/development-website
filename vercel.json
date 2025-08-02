@@ -19,6 +19,14 @@
       "dest": "/collaborative-canvas/index.html"
     },
     {
+      "src": "/collaborative-canvas/assets/(.*)",
+      "dest": "/collaborative-canvas/assets/$1"
+    },
+    {
+      "src": "/tetris/assets/(.*)",
+      "dest": "/tetris/assets/$1"
+    },
+    {
       "src": "/",
       "dest": "/index.html"
     },
