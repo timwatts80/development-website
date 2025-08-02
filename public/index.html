@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Development Website</title>
+    <!-- Updated for Vercel deployment trigger -->
     <style>
         * {
             margin: 0;
@@ -18,8 +19,71 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+        }
+
+        /* Header Navigation */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 15px 20px;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00ffff, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #00ffff;
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Main content with top padding for fixed header */
+        .main-content {
+            flex: 1;
+            display: flex;
             align-items: center;
             justify-content: center;
+            padding-top: 80px;
         }
 
         .container {
@@ -108,7 +172,38 @@
             font-size: 0.9rem;
         }
 
+        /* Enhanced Mobile Responsiveness */
         @media (max-width: 768px) {
+            .nav-links {
+                position: fixed;
+                top: 70px;
+                left: -100%;
+                width: 100%;
+                background: rgba(26, 26, 26, 0.98);
+                flex-direction: column;
+                gap: 0;
+                padding: 20px;
+                transition: left 0.3s ease;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .nav-links.active {
+                left: 0;
+            }
+
+            .nav-links li {
+                padding: 15px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .nav-links li:last-child {
+                border-bottom: none;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
             h1 {
                 font-size: 2rem;
             }
@@ -117,50 +212,154 @@
                 padding: 20px 15px;
             }
             
+            .games-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                margin: 20px 0;
+            }
+            
+            .game-card {
+                padding: 20px;
+                min-height: auto;
+            }
+            
             .game-title {
                 font-size: 1.5rem;
+            }
+            
+            .game-description {
+                font-size: 1rem;
+            }
+            
+            .footer {
+                position: relative;
+                margin-top: 40px;
+                transform: none;
+                left: auto;
+                bottom: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 10px 15px;
+            }
+
+            .logo {
+                font-size: 1.3rem;
+            }
+
+            h1 {
+                font-size: 1.7rem;
+            }
+            
+            p {
+                font-size: 1.1rem;
+            }
+            
+            .container {
+                padding: 15px 10px;
+            }
+            
+            .game-card {
+                padding: 15px;
+                border-radius: 10px;
+            }
+            
+            .game-title {
+                font-size: 1.3rem;
+                margin-bottom: 10px;
+            }
+            
+            .game-description {
+                font-size: 0.95rem;
+                margin-bottom: 15px;
+            }
+            
+            .game-features {
+                font-size: 0.9rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Development Website</h1>
-        <p>Welcome to my collection of web games and projects</p>
+    <header class="header">
+        <nav class="nav">
+            <a href="/" class="logo">Dev Portfolio</a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="/">Home</a></li>
+                <li><a href="/tetris">Tetris</a></li>
+                <li><a href="/collaborative-canvas">Canvas</a></li>
+            </ul>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                ☰
+            </button>
+        </nav>
+    </header>
 
-        <div class="games-section">
-            <a href="/tetris" class="game-card">
-                <div class="game-title">🧩 Tetris</div>
-                <div class="game-description">
-                    Classic Tetris with modern features and global leaderboard
-                </div>
-                <ul class="game-features">
-                    <li>Progressive speed increases</li>
-                    <li>Global leaderboard system</li>
-                    <li>Mobile-friendly controls</li>
-                    <li>Real-time speed indicator</li>
-                    <li>Visual effects and animations</li>
-                </ul>
-            </a>
+    <main class="main-content">
+        <div class="container">
+            <h1>Development Website</h1>
+            <p>Welcome to my collection of web games and projects</p>
 
-            <a href="/collaborative-canvas" class="game-card">
-                <div class="game-title">🎨 Collaborative Canvas</div>
-                <div class="game-description">
-                    Real-time collaborative drawing tool for multiple devices
-                </div>
-                <ul class="game-features">
-                    <li>Real-time multi-device drawing</li>
-                    <li>Multiple brush sizes and colors</li>
-                    <li>Touch and mouse support</li>
-                    <li>Live collaboration indicators</li>
-                    <li>Instant synchronization</li>
-                </ul>
-            </a>
+            <div class="games-section">
+                <a href="/tetris" class="game-card">
+                    <div class="game-title">🧩 Tetris</div>
+                    <div class="game-description">
+                        Classic Tetris with modern features and global leaderboard
+                    </div>
+                    <ul class="game-features">
+                        <li>Progressive speed increases</li>
+                        <li>Global leaderboard system</li>
+                        <li>Mobile-friendly controls</li>
+                        <li>Real-time speed indicator</li>
+                        <li>Visual effects and animations</li>
+                    </ul>
+                </a>
+
+                <a href="/collaborative-canvas" class="game-card">
+                    <div class="game-title">🎨 Collaborative Canvas</div>
+                    <div class="game-description">
+                        Real-time collaborative drawing tool for multiple devices
+                    </div>
+                    <ul class="game-features">
+                        <li>Real-time multi-device drawing</li>
+                        <li>Multiple brush sizes and colors</li>
+                        <li>Touch and mouse support</li>
+                        <li>Live collaboration indicators</li>
+                        <li>Instant synchronization</li>
+                    </ul>
+                </a>
+            </div>
         </div>
-    </div>
+    </main>
 
     <div class="footer">
         Click on any game to play!
     </div>
+
+    <script>
+        // Mobile menu toggle functionality
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const navLinks = document.getElementById('navLinks');
+
+        mobileMenuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        // Close mobile menu when clicking a link
+        navLinks.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A') {
+                navLinks.classList.remove('active');
+            }
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.nav')) {
+                navLinks.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
