@@ -8,8 +8,5 @@
     "dev:canvas": "cd collaborative-canvas && npm run dev",
     "preview": "cd tetris && npm run preview",
     "serve": "python3 -m http.server 3000 --directory public"
-  },
-  "engines": {
-    "node": "22.x"
   }
 }
