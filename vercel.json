@@ -11,20 +11,26 @@
       "dest": "/api/$1"
     },
     {
-      "src": "/tetris/?",
+      "src": "/tetris/?$",
       "dest": "/tetris/index.html"
     },
     {
-      "src": "/collaborative-canvas/?",
+      "src": "/collaborative-canvas/?$",
       "dest": "/collaborative-canvas/index.html"
     },
     {
-      "src": "/collaborative-canvas/assets/(.*)",
-      "dest": "/collaborative-canvas/assets/$1"
+      "src": "/collaborative-canvas/assets/(.+)",
+      "dest": "/collaborative-canvas/assets/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
     },
     {
-      "src": "/tetris/assets/(.*)",
-      "dest": "/tetris/assets/$1"
+      "src": "/tetris/assets/(.+)",
+      "dest": "/tetris/assets/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
     },
     {
       "src": "/",
