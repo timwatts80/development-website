@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Development Website</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #00ffff, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .games-section {
+            margin: 40px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 40px auto;
+        }
+
+        .game-card {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 30px;
+            border: 2px solid #4a5568;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            min-height: 280px;
+        }
+
+        .game-card:hover {
+            border-color: #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .game-title {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #00ffff;
+        }
+
+        .game-description {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+
+        .game-features {
+            list-style: none;
+            text-align: left;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .game-features li {
+            padding: 5px 0;
+            opacity: 0.7;
+        }
+
+        .game-features li:before {
+            content: "🎮 ";
+            margin-right: 8px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.5;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .game-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Development Website</h1>
+        <p>Welcome to my collection of web games and projects</p>
+
+        <div class="games-section">
+            <a href="/tetris" class="game-card">
+                <div class="game-title">🧩 Tetris</div>
+                <div class="game-description">
+                    Classic Tetris with modern features and global leaderboard
+                </div>
+                <ul class="game-features">
+                    <li>Progressive speed increases</li>
+                    <li>Global leaderboard system</li>
+                    <li>Mobile-friendly controls</li>
+                    <li>Real-time speed indicator</li>
+                    <li>Visual effects and animations</li>
+                </ul>
+            </a>
+
+            <a href="/collaborative-canvas" class="game-card">
+                <div class="game-title">🎨 Collaborative Canvas</div>
+                <div class="game-description">
+                    Real-time collaborative drawing tool for multiple devices
+                </div>
+                <ul class="game-features">
+                    <li>Real-time multi-device drawing</li>
+                    <li>Multiple brush sizes and colors</li>
+                    <li>Touch and mouse support</li>
+                    <li>Live collaboration indicators</li>
+                    <li>Instant synchronization</li>
+                </ul>
+            </a>
+        </div>
+    </div>
+
+    <div class="footer">
+        Click on any game to play!
+    </div>
+</body>
+</html>

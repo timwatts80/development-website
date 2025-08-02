@@ -1,6 +1,12 @@
 {
-  "buildCommand": "cd games/tetris-video-game && npm install && npm run build",
-  "outputDirectory": "games/tetris-video-game/dist",
-  "installCommand": "npm install",
-  "framework": null
+  "rewrites": [
+    {
+      "source": "/tetris",
+      "destination": "/tetris/index.html"
+    },
+    {
+      "source": "/collaborative-canvas",
+      "destination": "/collaborative-canvas/index.html"
+    }
+  ]
 }

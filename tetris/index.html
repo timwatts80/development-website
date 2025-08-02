@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Tetris Game</title>
+  </head>
+  <body>
+    <div id="app">
+      <div class="game-container">
+        <div class="game-header">
+          <h1>Tetris</h1>
+          <div id="server-status" class="server-status">
+            <span class="status-indicator" id="status-indicator">●</span>
+            <span id="status-text">Checking server...</span>
+          </div>
+        </div>
+        <div class="game-content">
+          <div class="game-main">
+            <div class="game-board-container">
+              <canvas id="game-board" width="300" height="600"></canvas>
+            </div>
+            <div class="right-sidebar">
+              <div class="game-info">
+                <div class="score">Score: <span id="score">0</span></div>
+                <div class="lines">Lines: <span id="lines">0</span></div>
+                <div class="level">Level: <span id="level">1</span></div>
+                <div class="speed">
+                  <span id="speed-indicator">Speed: 0%</span>
+                </div>
+              </div>
+              <!-- Next Piece View -->
+              <div class="next-piece-overlay">
+                <h4>Next</h4>
+                <canvas id="next-piece" width="80" height="80"></canvas>
+              </div>
+              <!-- Game Control Buttons -->
+              <div class="game-sidebar">
+                <button id="start-btn" class="game-button">Start</button>
+                <button id="pause-btn" class="game-button" disabled>Pause</button>
+                <button id="reset-btn" class="game-button">Reset</button>
+                <div class="controls desktop-controls">
+                  <h3>Controls</h3>
+                  <p>← → Move</p>
+                  <p>↓ Soft Drop</p>
+                  <p>↑ Rotate</p>
+                  <p>Space Hard Drop</p>
+                  <p>P Pause</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Mobile Touch Controls - Between game board and buttons -->
+          <div class="mobile-controls" id="mobile-controls">
+            <div class="controls-layout">
+              <div class="hard-drop-section">
+                <button id="hard-drop-btn" class="touch-btn hard-drop-btn">↓</button>
+              </div>
+              <div class="diamond-controls">
+                <div class="control-row">
+                  <button id="rotate-btn" class="touch-btn rotate-btn">↻</button>
+                </div>
+                <div class="control-row">
+                  <button id="left-btn" class="touch-btn move-btn">←</button>
+                  <button id="right-btn" class="touch-btn move-btn">→</button>
+                </div>
+                <div class="control-row">
+                  <button id="down-btn" class="touch-btn move-btn">↓</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Player Name Input Modal -->
+        <div id="name-modal" class="game-modal">
+          <div class="modal-content">
+            <h2>Welcome to Tetris!</h2>
+            <p>Enter your name to start playing:</p>
+            <input type="text" id="player-name" maxlength="20" placeholder="Enter your name" />
+            <button id="start-game-btn" class="game-button">Start Game</button>
+          </div>
+        </div>
+        <!-- Game Over Modal -->
+        <div id="game-over" class="game-over hidden">
+          <h2>Game Over!</h2>
+          <p>Final Score: <span id="final-score">0</span></p>
+          <button id="restart-btn" class="game-button">Play Again</button>
+          <button id="show-leaderboard-btn" class="game-button">View Leaderboard</button>
+        </div>
+        <!-- Leaderboard Modal -->
+        <div id="leaderboard-modal" class="game-modal hidden">
+          <div class="modal-content">
+            <h2>🏆 Top 10 Scores 🏆</h2>
+            <div id="leaderboard-list"></div>
+            <div class="modal-buttons">
+              <button id="close-leaderboard-btn" class="game-button">Play Again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

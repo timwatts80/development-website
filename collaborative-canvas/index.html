@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Collaborative Canvas</title>
+    <link rel="icon" href="./canvas-icon.svg" type="image/svg+xml">
+</head>
+<body>
+    <div id="app">
+        <div class="canvas-container">
+            <div class="toolbar">
+                <div class="toolbar-section">
+                    <h1>🎨 Collaborative Canvas</h1>
+                    <div class="connection-status">
+                        <span class="status-indicator" id="status-indicator">●</span>
+                        <span id="status-text">Connecting...</span>
+                        <span id="user-count" class="user-count">0 users online</span>
+                    </div>
+                </div>
+                
+                                <div class="toolbar-section">
+                    <div class="tool-group">
+                        <label for="brush-size">Brush Size:</label>
+                        <input type="range" id="brush-size" min="1" max="50" value="5">
+                        <span id="brush-size-display">5px</span>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <label for="taper">Taper:</label>
+                        <input type="range" id="taper" min="0" max="100" value="50">
+                        <span id="taper-display">50%</span>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <label for="color-picker">Color:</label>
+                        <input type="color" id="color-picker" value="#000000">
+                    </div>
+                    
+                    <div class="tool-group">
+                        <button id="clear-canvas" class="tool-btn">Clear Canvas</button>
+                        <button id="save-canvas" class="tool-btn">Save Image</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="canvas-wrapper">
+                <div class="brush-toolbar">
+                    <div class="brush-icons">
+                        <button id="precision-brush" class="brush-icon-btn active" title="Precision - Fast=Thin, Slow=Thick">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 8L14 6L8 12L6 14L4 16L6 18L8 16L10 14L16 8Z"/>
+                                <ellipse cx="7" cy="15" rx="1.2" ry="0.6" transform="rotate(45 7 15)"/>
+                            </svg>
+                        </button>
+                        <button id="expression-brush" class="brush-icon-btn" title="Expression - Fast=Thick, Slow=Thin">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 8L14 6L8 12L6 14L4 16L6 18L8 16L10 14L16 8Z"/>
+                                <ellipse cx="7" cy="15" rx="2" ry="1" transform="rotate(45 7 15)"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <canvas id="drawing-canvas"></canvas>
+                <div class="cursors-layer" id="cursors-layer"></div>
+            </div>
+            
+            <div class="users-panel" id="users-panel">
+                <h3>Active Users</h3>
+                <div class="users-list" id="users-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+</body>
+</html>
