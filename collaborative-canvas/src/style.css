@@ -10,13 +10,22 @@ body {
     height: 100vh;
     overflow: hidden;
     color: white;
+    /* iOS-specific fixes */
+    -webkit-overflow-scrolling: touch;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
 }
 
 .canvas-container {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    height: 100dvh; /* Use dynamic viewport height when supported */
     /* Remove margin-top since we'll handle it properly */
+    position: relative;
+    overflow: hidden;
 }
 
 .toolbar {
@@ -957,5 +966,42 @@ h1 {
         width: 44px;
         height: 44px;
         font-size: 11px;
+    }
+}
+
+/* iOS Chrome specific fixes */
+@supports (-webkit-touch-callout: none) {
+    .canvas-container {
+        height: 100vh;
+        height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        padding-top: 0;
+        margin-top: 0;
+    }
+    
+    body {
+        height: 100vh;
+        height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        padding-top: env(safe-area-inset-top, 0);
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    
+    .toolbar {
+        margin-top: 0;
+        padding-top: 15px;
+    }
+}
+
+/* Additional iOS viewport fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 1) and (orientation: portrait) {
+    .canvas-container {
+        min-height: 100vh;
+        height: 100vh;
+    }
+}
+
+@media screen and (-webkit-min-device-pixel-ratio: 1) and (orientation: landscape) {
+    .canvas-container {
+        min-height: 100vh;
+        height: 100vh;
     }
 }
