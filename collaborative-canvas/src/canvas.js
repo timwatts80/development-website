@@ -38,6 +38,7 @@ export class CollaborativeCanvas {
         
         // Brush type variables
         this.brushType = 'precision' // 'precision' (fast=thin) or 'expression' (fast=thick)
+        this.isEraser = false // Whether eraser mode is active
         this.strokeProgress = 0
         this.totalStrokeDistance = 0
         this.strokeDistances = []
@@ -61,6 +62,7 @@ export class CollaborativeCanvas {
         this.setupEventListeners()
         this.connectToServer()
         this.updateConnectionStatus('connecting', 'Connecting to server...')
+        this.updateCursor() // Set initial cursor
     }
     
     setupCanvas() {
@@ -116,24 +118,41 @@ export class CollaborativeCanvas {
         brushSize.addEventListener('input', (e) => {
             this.currentSize = parseInt(e.target.value)
             brushSizeDisplay.textContent = `${this.currentSize}px`
+            this.updateCursor()
         })
         
         // Brush type icon buttons
         const precisionBtn = document.getElementById('precision-brush')
         const expressionBtn = document.getElementById('expression-brush')
+        const eraserBtn = document.getElementById('eraser-brush')
         
         precisionBtn.addEventListener('click', () => {
             this.brushType = 'precision'
+            this.isEraser = false
             precisionBtn.classList.add('active')
             expressionBtn.classList.remove('active')
+            eraserBtn.classList.remove('active')
+            this.updateCursor()
             console.log(`🖌️ Brush type changed to: Precision (fast=thin)`)
         })
         
         expressionBtn.addEventListener('click', () => {
             this.brushType = 'expression'
+            this.isEraser = false
             expressionBtn.classList.add('active')
             precisionBtn.classList.remove('active')
+            eraserBtn.classList.remove('active')
+            this.updateCursor()
             console.log(`🖌️ Brush type changed to: Expression (fast=thick)`)
+        })
+        
+        eraserBtn.addEventListener('click', () => {
+            this.isEraser = true
+            eraserBtn.classList.add('active')
+            precisionBtn.classList.remove('active')
+            expressionBtn.classList.remove('active')
+            this.updateCursor()
+            console.log(`🧽 Eraser mode activated`)
         })
         
         // Taper control
@@ -399,7 +418,8 @@ export class CollaborativeCanvas {
     
     // Enhanced Bezier drawing with better anti-aliasing and smoothing
     drawAdvancedTaperedBezier(p1, cp1, cp2, p2, size) {
-        this.ctx.globalCompositeOperation = 'source-over'
+        // Set composite operation based on eraser mode
+        this.ctx.globalCompositeOperation = this.isEraser ? 'destination-out' : 'source-over'
         this.ctx.strokeStyle = this.currentColor
         this.ctx.lineWidth = size
         this.ctx.lineCap = 'round'
@@ -427,6 +447,11 @@ export class CollaborativeCanvas {
     
     // Calculate tapered brush size based on brush type and velocity
     calculateTaperedSize(baseSize) {
+        // Eraser should always have consistent size without taper
+        if (this.isEraser) {
+            return baseSize
+        }
+        
         if (this.taper === 0) {
             return baseSize
         }
@@ -474,7 +499,8 @@ export class CollaborativeCanvas {
     
     // Draw tapered Bezier curve using multiple segments with varying width
     drawTaperedBezier(p1, cp1, cp2, p2, size) {
-        this.ctx.globalCompositeOperation = 'source-over'
+        // Set composite operation based on eraser mode
+        this.ctx.globalCompositeOperation = this.isEraser ? 'destination-out' : 'source-over'
         this.ctx.strokeStyle = this.currentColor
         this.ctx.lineCap = 'round'
         this.ctx.lineJoin = 'round'
@@ -642,7 +668,8 @@ export class CollaborativeCanvas {
     }
     
     drawLine(x1, y1, x2, y2, color, size) {
-        this.ctx.globalCompositeOperation = 'source-over'
+        // Set composite operation based on eraser mode
+        this.ctx.globalCompositeOperation = this.isEraser ? 'destination-out' : 'source-over'
         this.ctx.strokeStyle = color
         this.ctx.lineWidth = size
         this.ctx.lineCap = 'round'
@@ -658,6 +685,48 @@ export class CollaborativeCanvas {
         // In a real implementation, this would send via Socket.IO
         // For now, just store locally - no simulation
         console.log('Drawing data:', data)
+    }
+    
+    updateCursor() {
+        // Create a custom cursor that matches the brush size
+        const size = Math.min(Math.max(this.currentSize, 4), 100) // Clamp size for visibility
+        const cursorSize = Math.max(size * 2, 20) // Make cursor slightly larger than brush for visibility
+        const half = cursorSize / 2
+        
+        // Create SVG cursor
+        let cursorSvg
+        if (this.isEraser) {
+            // Eraser cursor - square with dashed border
+            cursorSvg = `
+                <svg width="${cursorSize}" height="${cursorSize}" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="${cursorSize - 4}" height="${cursorSize - 4}" 
+                          fill="none" stroke="#666" stroke-width="2" stroke-dasharray="4,2" opacity="0.8"/>
+                    <rect x="1" y="1" width="${cursorSize - 2}" height="${cursorSize - 2}" 
+                          fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="4,2" opacity="0.6"/>
+                </svg>
+            `
+        } else {
+            // Brush cursor - circle with cross hair
+            cursorSvg = `
+                <svg width="${cursorSize}" height="${cursorSize}" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="${half}" cy="${half}" r="${size}" fill="none" stroke="#666" stroke-width="2" opacity="0.8"/>
+                    <circle cx="${half}" cy="${half}" r="${size}" fill="none" stroke="#fff" stroke-width="1" opacity="0.6"/>
+                    <line x1="${half}" y1="0" x2="${half}" y2="${cursorSize}" stroke="#666" stroke-width="1" opacity="0.6"/>
+                    <line x1="0" y1="${half}" x2="${cursorSize}" y2="${half}" stroke="#666" stroke-width="1" opacity="0.6"/>
+                    <circle cx="${half}" cy="${half}" r="2" fill="#666" opacity="0.8"/>
+                </svg>
+            `
+        }
+        
+        // Convert SVG to data URL
+        const svgBlob = new Blob([cursorSvg], { type: 'image/svg+xml' })
+        const svgUrl = URL.createObjectURL(svgBlob)
+        
+        // Apply cursor to canvas
+        this.canvas.style.cursor = `url(${svgUrl}) ${half} ${half}, crosshair`
+        
+        // Clean up old URL after a delay to avoid flicker
+        setTimeout(() => URL.revokeObjectURL(svgUrl), 1000)
     }
     
     sendCursorPosition(e) {

@@ -7,6 +7,7 @@ class MobileUI {
     constructor() {
         this.activeSlider = null
         this.sliderJustOpened = false
+        this.usersPanelOpen = false
         this.sliderData = {
             'brush-size': { min: 1, max: 50, value: 5, unit: 'px', group: 'brush-size-group' },
             'taper': { min: 0, max: 100, value: 50, unit: '%', group: 'taper-group' }
@@ -17,6 +18,7 @@ class MobileUI {
     init() {
         this.setupSliderButtons()
         this.setupMobileSliders()
+        this.setupUsersPanel()
         this.setupDocumentClick()
     }
     
@@ -92,9 +94,21 @@ class MobileUI {
         })
     }
     
+    setupUsersPanel() {
+        const userCountBtn = document.getElementById('user-count')
+        if (userCountBtn) {
+            userCountBtn.addEventListener('click', (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                this.toggleUsersPanel()
+            })
+        }
+    }
+    
     setupDocumentClick() {
-        // Close sliders when clicking outside
+        // Close sliders and users panel when clicking outside
         document.addEventListener('click', (e) => {
+            // Handle mobile slider closing
             if (window.innerWidth <= 768 && this.activeSlider && !this.sliderJustOpened) {
                 const activeGroup = document.getElementById(this.sliderData[this.activeSlider].group)
                 const mobileSlider = document.getElementById(`${this.activeSlider}-mobile-slider`)
@@ -106,10 +120,24 @@ class MobileUI {
                     this.closeMobileSlider()
                 }
             }
+            
+            // Handle users panel closing
+            if (this.usersPanelOpen) {
+                const usersPanel = document.getElementById('users-panel')
+                const userCountBtn = document.getElementById('user-count')
+                
+                // Check if click is outside both the panel and the user count button
+                if (usersPanel && userCountBtn &&
+                    !usersPanel.contains(e.target) &&
+                    !userCountBtn.contains(e.target)) {
+                    this.closeUsersPanel()
+                }
+            }
         }, true) // Use capture phase to ensure it runs
         
         // Also handle touch events for mobile
         document.addEventListener('touchstart', (e) => {
+            // Handle mobile slider closing
             if (window.innerWidth <= 768 && this.activeSlider && !this.sliderJustOpened) {
                 const activeGroup = document.getElementById(this.sliderData[this.activeSlider].group)
                 const mobileSlider = document.getElementById(`${this.activeSlider}-mobile-slider`)
@@ -119,6 +147,19 @@ class MobileUI {
                     !activeGroup.contains(e.target) && 
                     !mobileSlider.contains(e.target)) {
                     this.closeMobileSlider()
+                }
+            }
+            
+            // Handle users panel closing
+            if (this.usersPanelOpen) {
+                const usersPanel = document.getElementById('users-panel')
+                const userCountBtn = document.getElementById('user-count')
+                
+                // Check if touch is outside both the panel and the user count button
+                if (usersPanel && userCountBtn &&
+                    !usersPanel.contains(e.target) &&
+                    !userCountBtn.contains(e.target)) {
+                    this.closeUsersPanel()
                 }
             }
         }, true) // Use capture phase
@@ -213,6 +254,30 @@ class MobileUI {
         const toolbarDisplay = document.getElementById(`${sliderId}-display`)
         if (toolbarDisplay) {
             toolbarDisplay.textContent = `${value}${unit}`
+        }
+    }
+    
+    toggleUsersPanel() {
+        if (this.usersPanelOpen) {
+            this.closeUsersPanel()
+        } else {
+            this.openUsersPanel()
+        }
+    }
+    
+    openUsersPanel() {
+        const usersPanel = document.getElementById('users-panel')
+        if (usersPanel) {
+            this.usersPanelOpen = true
+            usersPanel.classList.add('active')
+        }
+    }
+    
+    closeUsersPanel() {
+        const usersPanel = document.getElementById('users-panel')
+        if (usersPanel) {
+            this.usersPanelOpen = false
+            usersPanel.classList.remove('active')
         }
     }
 }
