@@ -871,7 +871,7 @@ h1 {
 
 /* Zoom Controls */
 .zoom-controls {
-    position: absolute;
+    position: fixed;
     bottom: 20px;
     right: 20px;
     display: flex;
@@ -937,6 +937,7 @@ h1 {
 /* Mobile adjustments for zoom controls */
 @media (max-width: 768px) {
     .zoom-controls {
+        position: fixed;
         bottom: 15px;
         right: 15px;
         gap: 6px;
