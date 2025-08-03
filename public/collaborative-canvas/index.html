@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Collaborative Canvas</title>
     <link rel="icon" href="/collaborative-canvas/assets/canvas-icon-DnFwUtQy.svg" type="image/svg+xml">
-  <script type="module" crossorigin src="/collaborative-canvas/assets/index-DM2ZhSso.js"></script>
-  <link rel="stylesheet" crossorigin href="/collaborative-canvas/assets/index-BWqN62h0.css">
+  <script type="module" crossorigin src="/collaborative-canvas/assets/index-DE5lIDez.js"></script>
+  <link rel="stylesheet" crossorigin href="/collaborative-canvas/assets/index-RoSXVHdI.css">
 </head>
 <body>
     <!-- Navigation Header -->
@@ -29,22 +29,39 @@
                     </div>
                 </div>
                 
-                                <div class="toolbar-section">
-                    <div class="tool-group">
-                        <label for="brush-size">Brush Size:</label>
+                <div class="toolbar-section">
+                    <div class="tool-group slider-group" id="brush-size-group">
+                        <label for="brush-size">Size:</label>
                         <input type="range" id="brush-size" min="1" max="50" value="5">
-                        <span id="brush-size-display">5px</span>
+                        <span id="brush-size-display" class="value-display">5px</span>
+                        
+                        <!-- Mobile Slider Popup -->
+                        <div class="mobile-slider-overlay" id="brush-size-mobile-slider">
+                            <div class="mobile-slider-container">
+                                <div class="mobile-slider-title">Size</div>
+                                <div class="mobile-slider-track">
+                                    <div class="mobile-slider-thumb"></div>
+                                </div>
+                                <div class="mobile-slider-value">5px</div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="tool-group">
+                    <div class="tool-group slider-group" id="taper-group">
                         <label for="taper">Taper:</label>
                         <input type="range" id="taper" min="0" max="100" value="50">
-                        <span id="taper-display">50%</span>
-                    </div>
-                    
-                    <div class="tool-group">
-                        <label for="color-picker">Color:</label>
-                        <input type="color" id="color-picker" value="#000000">
+                        <span id="taper-display" class="value-display">50%</span>
+                        
+                        <!-- Mobile Slider Popup -->
+                        <div class="mobile-slider-overlay" id="taper-mobile-slider">
+                            <div class="mobile-slider-container">
+                                <div class="mobile-slider-title">Taper</div>
+                                <div class="mobile-slider-track">
+                                    <div class="mobile-slider-thumb"></div>
+                                </div>
+                                <div class="mobile-slider-value">50%</div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="tool-group">
@@ -69,6 +86,18 @@
                                 <ellipse cx="7" cy="15" rx="2" ry="1" transform="rotate(45 7 15)"/>
                             </svg>
                         </button>
+                        <button id="eraser-brush" class="brush-icon-btn" title="Eraser - Remove content">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16.24 3.56L21.44 8.76C22.15 9.47 22.15 10.64 21.44 11.35L11.35 21.44C10.64 22.15 9.47 22.15 8.76 21.44L3.56 16.24C2.85 15.53 2.85 14.36 3.56 13.65L13.65 3.56C14.36 2.85 15.53 2.85 16.24 3.56M6.99 14.29L9.71 17.01L11.13 15.59L8.41 12.87L6.99 14.29Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="toolbar-divider"></div>
+                    
+                    <div class="color-picker-container">
+                        <label for="color-picker">Color</label>
+                        <input type="color" id="color-picker" value="#000000">
                     </div>
                 </div>
                 <canvas id="drawing-canvas"></canvas>
