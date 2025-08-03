@@ -834,3 +834,71 @@ h1 {
 .new-stroke {
     animation: strokeAppear 0.3s ease-out;
 }
+
+/* Zoom Controls */
+.zoom-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 250; /* Above canvas but below toolbar */
+}
+
+.zoom-btn {
+    width: 48px;
+    height: 48px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+}
+
+.zoom-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+}
+
+.zoom-btn:active {
+    transform: scale(0.95);
+    background: rgba(0, 0, 0, 1);
+}
+
+.zoom-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Hand tool active state */
+#hand-tool.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Mobile adjustments for zoom controls */
+@media (max-width: 768px) {
+    .zoom-controls {
+        bottom: 15px;
+        right: 15px;
+        gap: 6px;
+    }
+    
+    .zoom-btn {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .zoom-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+}

@@ -47,6 +47,39 @@ export class CollaborativeCanvas {
         this.canvasStates = [] // Store canvas states for undo
         this.maxUndoStates = 20 // Maximum number of undo states
         this.currentStateIndex = -1
+        
+        // Zoom system
+        this.zoomLevel = 1.0
+        this.minZoom = 0.1
+        this.maxZoom = 5.0
+        this.canvasWidth = 1080 // Fixed canvas width
+        this.canvasHeight = 1080 // Fixed canvas height
+        
+        // Pan system
+        this.panX = 0 // Pan offset X
+        this.panY = 0 // Pan offset Y
+        this.isPanning = false
+        this.lastPanX = 0
+        this.lastPanY = 0
+        this.isHandTool = false // Whether hand tool is active
+    }
+    
+    // Convert screen coordinates to canvas coordinates accounting for zoom and pan
+    getCanvasCoordinates(clientX, clientY) {
+        const rect = this.canvas.getBoundingClientRect()
+        
+        // Get the center of the displayed canvas
+        const centerX = rect.left + rect.width / 2
+        const centerY = rect.top + rect.height / 2
+        
+        // Convert to canvas coordinates
+        const canvasX = (clientX - centerX) / this.zoomLevel + this.canvasWidth / 2 + this.panX
+        const canvasY = (clientY - centerY) / this.zoomLevel + this.canvasHeight / 2 + this.panY
+        
+        return {
+            x: canvasX,
+            y: canvasY
+        }
     }
     
     generateUserId() {
@@ -87,6 +120,10 @@ export class CollaborativeCanvas {
         this.ctx.imageSmoothingEnabled = true
         this.ctx.imageSmoothingQuality = 'high'
         
+        // Set white background
+        this.ctx.fillStyle = 'white'
+        this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
+        
         // Enable sub-pixel rendering for smoother lines
         const pixelRatio = window.devicePixelRatio || 1
         if (pixelRatio > 1) {
@@ -102,13 +139,22 @@ export class CollaborativeCanvas {
         const container = this.canvas.parentElement
         const rect = container.getBoundingClientRect()
         
-        // Handle high DPI displays for smoother rendering
+        // Keep canvas at fixed size regardless of container
         const pixelRatio = window.devicePixelRatio || 1
         
-        this.canvas.width = rect.width * pixelRatio
-        this.canvas.height = rect.height * pixelRatio
-        this.canvas.style.width = rect.width + 'px'
-        this.canvas.style.height = rect.height + 'px'
+        // Set canvas to fixed dimensions
+        this.canvas.width = this.canvasWidth * pixelRatio
+        this.canvas.height = this.canvasHeight * pixelRatio
+        
+        // If zoom level is still at default, calculate initial zoom to fit container
+        if (this.zoomLevel === 1.0 && this.panX === 0 && this.panY === 0) {
+            const scaleX = rect.width / this.canvasWidth
+            const scaleY = rect.height / this.canvasHeight
+            this.zoomLevel = Math.min(scaleX, scaleY) * 0.9 // 0.9 to add some padding
+        }
+        
+        // Apply current zoom and pan
+        this.updateCanvasTransform()
         
         // Reconfigure context after resize for smooth lines
         this.ctx.scale(pixelRatio, pixelRatio)
@@ -116,6 +162,10 @@ export class CollaborativeCanvas {
         this.ctx.lineJoin = 'round'
         this.ctx.imageSmoothingEnabled = true
         this.ctx.imageSmoothingQuality = 'high'
+        
+        // Set white background
+        this.ctx.fillStyle = 'white'
+        this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
     }
     
     setupUI() {
@@ -137,9 +187,11 @@ export class CollaborativeCanvas {
         precisionBtn.addEventListener('click', () => {
             this.brushType = 'precision'
             this.isEraser = false
+            this.isHandTool = false
             precisionBtn.classList.add('active')
             expressionBtn.classList.remove('active')
             eraserBtn.classList.remove('active')
+            document.getElementById('hand-tool').classList.remove('active')
             this.updateCursor()
             console.log(`🖌️ Brush type changed to: Precision (fast=thin)`)
         })
@@ -147,18 +199,22 @@ export class CollaborativeCanvas {
         expressionBtn.addEventListener('click', () => {
             this.brushType = 'expression'
             this.isEraser = false
+            this.isHandTool = false
             expressionBtn.classList.add('active')
             precisionBtn.classList.remove('active')
             eraserBtn.classList.remove('active')
+            document.getElementById('hand-tool').classList.remove('active')
             this.updateCursor()
             console.log(`🖌️ Brush type changed to: Expression (fast=thick)`)
         })
         
         eraserBtn.addEventListener('click', () => {
             this.isEraser = true
+            this.isHandTool = false
             eraserBtn.classList.add('active')
             precisionBtn.classList.remove('active')
             expressionBtn.classList.remove('active')
+            document.getElementById('hand-tool').classList.remove('active')
             this.updateCursor()
             console.log(`🧽 Eraser mode activated`)
         })
@@ -192,19 +248,107 @@ export class CollaborativeCanvas {
         document.getElementById('undo-btn').addEventListener('click', () => {
             this.undo()
         })
+        
+        // Hand tool
+        const handToolBtn = document.getElementById('hand-tool')
+        if (handToolBtn) {
+            handToolBtn.addEventListener('click', () => {
+                this.isHandTool = !this.isHandTool
+                if (this.isHandTool) {
+                    handToolBtn.classList.add('active')
+                    // Deactivate brush tools when hand tool is active
+                    document.getElementById('precision-brush').classList.remove('active')
+                    document.getElementById('expression-brush').classList.remove('active')
+                    document.getElementById('eraser-brush').classList.remove('active')
+                    this.isEraser = false
+                    this.canvas.style.cursor = 'grab'
+                    console.log('🤚 Hand tool activated')
+                } else {
+                    handToolBtn.classList.remove('active')
+                    // Reactivate precision brush as default
+                    document.getElementById('precision-brush').classList.add('active')
+                    this.brushType = 'precision'
+                    this.updateCursor()
+                    console.log('🖌️ Drawing mode restored')
+                }
+            })
+        }
+        
+        // Zoom controls
+        const zoomInBtn = document.getElementById('zoom-in')
+        const zoomOutBtn = document.getElementById('zoom-out')
+        
+        if (zoomInBtn) {
+            zoomInBtn.addEventListener('click', () => {
+                this.zoomIn()
+            })
+        }
+        
+        if (zoomOutBtn) {
+            zoomOutBtn.addEventListener('click', () => {
+                this.zoomOut()
+            })
+        }
     }
     
     setupEventListeners() {
         // Mouse events
-        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e))
-        this.canvas.addEventListener('mousemove', (e) => this.draw(e))
-        this.canvas.addEventListener('mouseup', () => this.stopDrawing())
-        this.canvas.addEventListener('mouseout', () => this.stopDrawing())
+        this.canvas.addEventListener('mousedown', (e) => {
+            if (this.isHandTool) {
+                this.startPan(e)
+            } else {
+                this.startDrawing(e)
+            }
+        })
+        
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (this.isHandTool && this.isPanning) {
+                this.updatePan(e)
+            } else if (!this.isHandTool) {
+                this.draw(e)
+            }
+        })
+        
+        this.canvas.addEventListener('mouseup', () => {
+            if (this.isHandTool) {
+                this.stopPan()
+            } else {
+                this.stopDrawing()
+            }
+        })
+        
+        this.canvas.addEventListener('mouseout', () => {
+            if (this.isHandTool) {
+                this.stopPan()
+            } else {
+                this.stopDrawing()
+            }
+        })
         
         // Touch events for mobile
-        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false })
-        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false })
-        this.canvas.addEventListener('touchend', () => this.stopDrawing(), { passive: false })
+        this.canvas.addEventListener('touchstart', (e) => {
+            if (this.isHandTool) {
+                this.handleTouchStartPan(e)
+            } else {
+                this.handleTouchStart(e)
+            }
+        }, { passive: false })
+        
+        this.canvas.addEventListener('touchmove', (e) => {
+            if (this.isHandTool && this.isPanning) {
+                this.handleTouchMovePan(e)
+            } else if (!this.isHandTool) {
+                this.handleTouchMove(e)
+            }
+        }, { passive: false })
+        
+        this.canvas.addEventListener('touchend', () => {
+            if (this.isHandTool) {
+                this.stopPan()
+            } else {
+                this.stopDrawing()
+            }
+        }, { passive: false })
         
         // Mouse move for cursor tracking (when not drawing)
         this.canvas.addEventListener('mousemove', (e) => {
@@ -235,9 +379,9 @@ export class CollaborativeCanvas {
     startDrawing(e) {
         this.isDrawing = true
         
-        const rect = this.canvas.getBoundingClientRect()
-        this.lastX = e.clientX - rect.left
-        this.lastY = e.clientY - rect.top
+        const coords = this.getCanvasCoordinates(e.clientX, e.clientY)
+        this.lastX = coords.x
+        this.lastY = coords.y
         
         // Start new stroke with enhanced smoothing and velocity-based taper
         this.points = [{ 
@@ -265,9 +409,9 @@ export class CollaborativeCanvas {
     draw(e) {
         if (!this.isDrawing) return
         
-        const rect = this.canvas.getBoundingClientRect()
-        const currentX = e.clientX - rect.left
-        const currentY = e.clientY - rect.top
+        const coords = this.getCanvasCoordinates(e.clientX, e.clientY)
+        const currentX = coords.x
+        const currentY = coords.y
         const currentTime = Date.now()
         
         // Calculate distance and velocity for taper
@@ -577,11 +721,11 @@ export class CollaborativeCanvas {
     handleTouchStart(e) {
         e.preventDefault()
         const touch = e.touches[0]
-        const rect = this.canvas.getBoundingClientRect()
         
         this.isDrawing = true
-        this.lastTouchX = touch.clientX - rect.left
-        this.lastTouchY = touch.clientY - rect.top
+        const coords = this.getCanvasCoordinates(touch.clientX, touch.clientY)
+        this.lastTouchX = coords.x
+        this.lastTouchY = coords.y
         this.lastX = this.lastTouchX
         this.lastY = this.lastTouchY
         
@@ -612,9 +756,9 @@ export class CollaborativeCanvas {
         if (!this.isDrawing) return
         
         const touch = e.touches[0]
-        const rect = this.canvas.getBoundingClientRect()
-        const currentX = touch.clientX - rect.left
-        const currentY = touch.clientY - rect.top
+        const coords = this.getCanvasCoordinates(touch.clientX, touch.clientY)
+        const currentX = coords.x
+        const currentY = coords.y
         const currentTime = Date.now()
         
         // Calculate distance and velocity for taper
@@ -746,9 +890,9 @@ export class CollaborativeCanvas {
     }
     
     sendCursorPosition(e) {
-        const rect = this.canvas.getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const y = e.clientY - rect.top
+        const coords = this.getCanvasCoordinates(e.clientX, e.clientY)
+        const x = coords.x
+        const y = coords.y
         
         // In a real implementation, send cursor position to server
         // For now, just update local cursor tracking
@@ -756,6 +900,10 @@ export class CollaborativeCanvas {
     
     clearCanvas() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+        
+        // Restore white background
+        this.ctx.fillStyle = 'white'
+        this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
         
         // Send clear command to server
         this.sendDrawingData({
@@ -877,5 +1025,97 @@ export class CollaborativeCanvas {
             undoBtn.disabled = this.currentStateIndex <= 0
             undoBtn.style.opacity = this.currentStateIndex <= 0 ? '0.5' : '1'
         }
+    }
+    
+    // Pan methods
+    startPan(e) {
+        this.isPanning = true
+        this.lastPanX = e.clientX
+        this.lastPanY = e.clientY
+        this.canvas.style.cursor = 'grabbing'
+    }
+    
+    updatePan(e) {
+        if (!this.isPanning) return
+        
+        const deltaX = e.clientX - this.lastPanX
+        const deltaY = e.clientY - this.lastPanY
+        
+        // Convert screen movement to canvas movement (reverse direction for natural feel)
+        this.panX += deltaX / this.zoomLevel
+        this.panY += deltaY / this.zoomLevel
+        
+        this.lastPanX = e.clientX
+        this.lastPanY = e.clientY
+        
+        this.updateCanvasTransform()
+    }
+    
+    stopPan() {
+        this.isPanning = false
+        if (this.isHandTool) {
+            this.canvas.style.cursor = 'grab'
+        }
+    }
+    
+    // Touch pan methods
+    handleTouchStartPan(e) {
+        e.preventDefault()
+        const touch = e.touches[0]
+        this.isPanning = true
+        this.lastPanX = touch.clientX
+        this.lastPanY = touch.clientY
+    }
+    
+    handleTouchMovePan(e) {
+        e.preventDefault()
+        if (!this.isPanning) return
+        
+        const touch = e.touches[0]
+        const deltaX = touch.clientX - this.lastPanX
+        const deltaY = touch.clientY - this.lastPanY
+        
+        // Convert screen movement to canvas movement (reverse direction for natural feel)
+        this.panX += deltaX / this.zoomLevel
+        this.panY += deltaY / this.zoomLevel
+        
+        this.lastPanX = touch.clientX
+        this.lastPanY = touch.clientY
+        
+        this.updateCanvasTransform()
+    }
+    
+    // Zoom methods
+    zoomIn() {
+        const newZoom = Math.min(this.zoomLevel * 1.2, this.maxZoom)
+        this.setZoom(newZoom)
+    }
+    
+    zoomOut() {
+        const newZoom = Math.max(this.zoomLevel / 1.2, this.minZoom)
+        this.setZoom(newZoom)
+    }
+    
+    setZoom(zoom) {
+        this.zoomLevel = zoom
+        this.updateCanvasTransform()
+    }
+    
+    updateCanvasTransform() {
+        const container = this.canvas.parentElement
+        const rect = container.getBoundingClientRect()
+        
+        // Apply zoom and pan
+        const displayWidth = this.canvasWidth * this.zoomLevel
+        const displayHeight = this.canvasHeight * this.zoomLevel
+        
+        this.canvas.style.width = displayWidth + 'px'
+        this.canvas.style.height = displayHeight + 'px'
+        this.canvas.style.transform = `translate(${-displayWidth/2 + this.panX * this.zoomLevel}px, ${-displayHeight/2 + this.panY * this.zoomLevel}px)`
+        this.canvas.style.position = 'absolute'
+        this.canvas.style.top = '50%'
+        this.canvas.style.left = '50%'
+        this.canvas.style.border = '2px solid rgba(255, 255, 255, 0.3)'
+        this.canvas.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)'
     }
 }
