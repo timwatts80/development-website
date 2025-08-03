@@ -15,8 +15,12 @@
       "dest": "/tetris/index.html"
     },
     {
+      "src": "/ink-pen/?$",
+      "dest": "/ink-pen/index.html"
+    },
+    {
       "src": "/collaborative-canvas/?$",
-      "dest": "/collaborative-canvas/index.html"
+      "dest": "/ink-pen/index.html"
     },
     {
       "src": "/collaborative-canvas/assets/(.+)",
