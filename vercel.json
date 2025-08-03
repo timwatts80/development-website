@@ -2,8 +2,8 @@
   "version": 2,
   "name": "development-website",
   "framework": null,
-  "installCommand": "echo 'No dependencies to install for static site'",
-  "buildCommand": "npm run build",
+  "installCommand": "cd tetris && npm install && cd ../collaborative-canvas && npm install",
+  "buildCommand": "cd tetris && npm run build && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm run build",
   "outputDirectory": "public",
   "routes": [
     {
