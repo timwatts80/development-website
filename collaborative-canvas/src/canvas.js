@@ -42,6 +42,11 @@ export class CollaborativeCanvas {
         this.strokeProgress = 0
         this.totalStrokeDistance = 0
         this.strokeDistances = []
+        
+        // Undo/Redo system
+        this.canvasStates = [] // Store canvas states for undo
+        this.maxUndoStates = 20 // Maximum number of undo states
+        this.currentStateIndex = -1
     }
     
     generateUserId() {
@@ -63,6 +68,9 @@ export class CollaborativeCanvas {
         this.connectToServer()
         this.updateConnectionStatus('connecting', 'Connecting to server...')
         this.updateCursor() // Set initial cursor
+        
+        // Save initial canvas state for undo functionality
+        this.saveCanvasState()
     }
     
     setupCanvas() {
@@ -178,6 +186,11 @@ export class CollaborativeCanvas {
         // Save canvas button
         document.getElementById('save-canvas').addEventListener('click', () => {
             this.saveCanvas()
+        })
+        
+        // Undo button
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            this.undo()
         })
     }
     
@@ -556,6 +569,9 @@ export class CollaborativeCanvas {
         }
         
         this.currentStroke = []
+        
+        // Save canvas state for undo functionality
+        this.saveCanvasState()
     }
     
     handleTouchStart(e) {
@@ -746,6 +762,9 @@ export class CollaborativeCanvas {
             type: 'clear',
             userId: this.userId
         })
+        
+        // Save canvas state for undo functionality
+        this.saveCanvasState()
     }
     
     saveCanvas() {
@@ -821,6 +840,42 @@ export class CollaborativeCanvas {
         if (cursor) {
             cursor.remove()
             this.cursors.delete(userId)
+        }
+    }
+    
+    // Undo/Redo functionality
+    saveCanvasState() {
+        // Remove any states after current index (for redo functionality)
+        this.canvasStates = this.canvasStates.slice(0, this.currentStateIndex + 1)
+        
+        // Add new state
+        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height)
+        this.canvasStates.push(imageData)
+        this.currentStateIndex++
+        
+        // Limit the number of stored states
+        if (this.canvasStates.length > this.maxUndoStates) {
+            this.canvasStates.shift()
+            this.currentStateIndex--
+        }
+        
+        this.updateUndoButtonState()
+    }
+    
+    undo() {
+        if (this.currentStateIndex > 0) {
+            this.currentStateIndex--
+            const imageData = this.canvasStates[this.currentStateIndex]
+            this.ctx.putImageData(imageData, 0, 0)
+            this.updateUndoButtonState()
+        }
+    }
+    
+    updateUndoButtonState() {
+        const undoBtn = document.getElementById('undo-btn')
+        if (undoBtn) {
+            undoBtn.disabled = this.currentStateIndex <= 0
+            undoBtn.style.opacity = this.currentStateIndex <= 0 ? '0.5' : '1'
         }
     }
 }

@@ -7,14 +7,6 @@
     <link rel="icon" href="./canvas-icon.svg" type="image/svg+xml">
 </head>
 <body>
-    <!-- Navigation Header -->
-    <header style="position: fixed; top: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(10px); z-index: 1000; padding: 10px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-      <nav style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
-        <a href="/" style="color: #00ffff; text-decoration: none; font-weight: bold; font-size: 1.2rem;">← Back to Games</a>
-        <span style="color: white; font-weight: bold;">🎨 Collaborative Canvas</span>
-      </nav>
-    </header>
-
     <div id="app">
         <div class="canvas-container">
             <div class="toolbar">
@@ -23,12 +15,31 @@
                         <span class="status-indicator" id="status-indicator">●</span>
                         <span id="status-text">Connecting...</span>
                         <span id="user-count" class="user-count">0 users online</span>
+                        
+                        <!-- Users panel positioned relative to connection status -->
+                        <div class="users-panel" id="users-panel">
+                            <h3>Active Users</h3>
+                            <div class="users-list" id="users-list"></div>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="toolbar-section">
+                    <button id="undo-btn" class="tool-btn" title="Undo last action">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                            <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+                        </svg>
+                        <span class="button-text">Undo</span>
+                    </button>
                     <div class="tool-group slider-group" id="brush-size-group">
-                        <label for="brush-size">Size:</label>
+                        <label for="brush-size">
+                            <svg class="slider-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="3"/>
+                                <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+                                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+                            </svg>
+                            <span class="slider-text">Size:</span>
+                        </label>
                         <input type="range" id="brush-size" min="1" max="50" value="5">
                         <span id="brush-size-display" class="value-display">5px</span>
                         
@@ -44,8 +55,15 @@
                         </div>
                     </div>
                     
-                    <div class="tool-group slider-group" id="taper-group">
-                        <label for="taper">Taper:</label>
+                                        <div class="tool-group slider-group" id="taper-group">
+                        <label for="taper">
+                            <svg class="slider-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M3 8C6 8 9 12 12 12C15 12 18 16 21 16" stroke-width="4" stroke-linecap="round"/>
+                                <path d="M3 10C6 10 9 12 12 12C15 12 18 14 21 14" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+                                <path d="M3 12C6 12 9 12 12 12C15 12 18 12 21 12" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+                            </svg>
+                            <span class="slider-text">Taper:</span>
+                        </label>
                         <input type="range" id="taper" min="0" max="100" value="50">
                         <span id="taper-display" class="value-display">50%</span>
                         
@@ -61,10 +79,8 @@
                         </div>
                     </div>
                     
-                    <div class="tool-group">
-                        <button id="clear-canvas" class="tool-btn">Clear Canvas</button>
-                        <button id="save-canvas" class="tool-btn">Save Image</button>
-                    </div>
+                    <button id="clear-canvas" class="tool-btn">Clear</button>
+                    <button id="save-canvas" class="tool-btn">Save Image</button>
                 </div>
             </div>
             
@@ -93,17 +109,11 @@
                     <div class="toolbar-divider"></div>
                     
                     <div class="color-picker-container">
-                        <label for="color-picker">Color</label>
                         <input type="color" id="color-picker" value="#000000">
                     </div>
                 </div>
                 <canvas id="drawing-canvas"></canvas>
                 <div class="cursors-layer" id="cursors-layer"></div>
-            </div>
-            
-            <div class="users-panel" id="users-panel">
-                <h3>Active Users</h3>
-                <div class="users-list" id="users-list"></div>
             </div>
         </div>
     </div>
