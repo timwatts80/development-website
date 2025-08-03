@@ -407,11 +407,11 @@ h1 {
         margin-bottom: 8px;
     }
     
-    /* Second section: Tools in compact grid */
+    /* Second section: Tools in compact grid - all on same row */
     .toolbar-section:last-child {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 4px;
         width: 100%;
     }
     
@@ -675,8 +675,8 @@ h1 {
     }
     
     .toolbar-section:last-child {
-        grid-template-columns: 1fr 1fr;
-        gap: 6px;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 3px;
     }
     
     .tool-group {
