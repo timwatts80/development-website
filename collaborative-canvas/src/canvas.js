@@ -30,14 +30,14 @@ export class CollaborativeCanvas {
         this.smoothingBuffer = [] // Buffer for advanced smoothing
         
         // Taper variables with velocity-based sizing
-        this.taper = 0.5 // Taper intensity (0-1)
+        this.taper = 0.5 // Taper intensity (-1 to 1 range, 50% = 0.5)
         this.velocityHistory = [] // Track velocity for taper calculations
         this.accelerationHistory = [] // Track acceleration for pressure simulation
         this.lastTimestamp = 0
         this.lastVelocity = 0
         
         // Brush type variables
-        this.brushType = 'precision' // 'precision' (fast=thin) or 'expression' (fast=thick)
+        this.brushType = 'ink-pen' // 'ink-pen' or 'eraser'
         this.isEraser = false // Whether eraser mode is active
         this.strokeProgress = 0
         this.totalStrokeDistance = 0
@@ -50,10 +50,17 @@ export class CollaborativeCanvas {
         
         // Zoom system
         this.zoomLevel = 1.0
+        this.baseZoom = 1.0 // The zoom level that represents 100% (fully in view)
         this.minZoom = 0.1
         this.maxZoom = 5.0
-        this.canvasWidth = 1080 // Fixed canvas width
+        this.canvasWidth = 1536 // Fixed canvas width (desktop landscape)
         this.canvasHeight = 1080 // Fixed canvas height
+        
+        // For mobile, we'll calculate responsive dimensions
+        this.isMobile = window.innerWidth <= 768
+        if (this.isMobile) {
+            this.setMobileCanvasDimensions()
+        }
         
         // Pan system
         this.panX = 0 // Pan offset X
@@ -68,13 +75,13 @@ export class CollaborativeCanvas {
     getCanvasCoordinates(clientX, clientY) {
         const rect = this.canvas.getBoundingClientRect()
         
-        // Get the center of the displayed canvas
-        const centerX = rect.left + rect.width / 2
-        const centerY = rect.top + rect.height / 2
+        // Get relative position within the displayed canvas (0 to 1)
+        const relativeX = (clientX - rect.left) / rect.width
+        const relativeY = (clientY - rect.top) / rect.height
         
-        // Convert to canvas coordinates
-        const canvasX = (clientX - centerX) / this.zoomLevel + this.canvasWidth / 2 + this.panX
-        const canvasY = (clientY - centerY) / this.zoomLevel + this.canvasHeight / 2 + this.panY
+        // Convert to canvas coordinates (since canvas is now 1:1 with logical size)
+        const canvasX = relativeX * this.canvasWidth
+        const canvasY = relativeY * this.canvasHeight
         
         return {
             x: canvasX,
@@ -94,6 +101,33 @@ export class CollaborativeCanvas {
                Math.floor(Math.random() * 100)
     }
     
+    setMobileCanvasDimensions() {
+        // Get the canvas wrapper dimensions
+        const container = document.querySelector('.canvas-wrapper')
+        if (!container) {
+            console.warn('Canvas wrapper not found for mobile sizing')
+            return
+        }
+        
+        // Use viewport dimensions as fallback if container isn't ready
+        const viewportWidth = window.innerWidth
+        const viewportHeight = window.innerHeight
+        
+        // Account for toolbar height (approximately 80px) and padding
+        const toolbarHeight = 80
+        const padding = 32 // 16px on all sides = 32px total per dimension
+        
+        // Calculate available space
+        const availableWidth = viewportWidth - padding
+        const availableHeight = viewportHeight - toolbarHeight - padding
+        
+        // Set canvas dimensions to fill the available space
+        this.canvasWidth = Math.max(availableWidth, 320) // Minimum width
+        this.canvasHeight = Math.max(availableHeight, 240) // Minimum height
+        
+        console.log(`Mobile canvas size: ${this.canvasWidth}x${this.canvasHeight}`)
+    }
+    
     init() {
         this.setupCanvas()
         this.setupUI()
@@ -101,6 +135,11 @@ export class CollaborativeCanvas {
         this.connectToServer()
         this.updateConnectionStatus('connecting', 'Connecting to server...')
         this.updateCursor() // Set initial cursor
+        
+        // Delay the initial positioning to ensure container is properly sized
+        setTimeout(() => {
+            this.resizeCanvas()
+        }, 100)
         
         // Save initial canvas state for undo functionality
         this.saveCanvasState()
@@ -110,8 +149,7 @@ export class CollaborativeCanvas {
         this.canvas = document.getElementById('drawing-canvas')
         this.ctx = this.canvas.getContext('2d')
         
-        // Set canvas size to fill container
-        this.resizeCanvas()
+        // Set up resize listener (initial sizing will be done in init())
         window.addEventListener('resize', () => this.resizeCanvas())
         
         // Configure drawing context for maximum smoothness
@@ -119,6 +157,10 @@ export class CollaborativeCanvas {
         this.ctx.lineJoin = 'round'
         this.ctx.imageSmoothingEnabled = true
         this.ctx.imageSmoothingQuality = 'high'
+        
+        // Set canvas to initial size
+        this.canvas.width = this.canvasWidth
+        this.canvas.height = this.canvasHeight
         
         // Set white background
         this.ctx.fillStyle = 'white'
@@ -136,29 +178,69 @@ export class CollaborativeCanvas {
     }
     
     resizeCanvas() {
-        const container = this.canvas.parentElement
+        // Check if we're on mobile and update canvas dimensions if needed
+        const wasMobile = this.isMobile
+        this.isMobile = window.innerWidth <= 768
+        
+        // If mobile state changed or we're on mobile, recalculate canvas dimensions
+        if (this.isMobile && (!wasMobile || this.isMobile)) {
+            this.setMobileCanvasDimensions()
+        } else if (!this.isMobile && wasMobile) {
+            // Switched from mobile to desktop, restore desktop dimensions
+            this.canvasWidth = 1536
+            this.canvasHeight = 1080
+        }
+        
+        // Use canvas-wrapper as the container for measuring available space
+        const container = document.querySelector('.canvas-wrapper')
+        if (!container) {
+            console.error('Canvas wrapper not found')
+            return
+        }
+        
         const rect = container.getBoundingClientRect()
         
-        // Keep canvas at fixed size regardless of container
-        const pixelRatio = window.devicePixelRatio || 1
-        
-        // Set canvas to fixed dimensions
-        this.canvas.width = this.canvasWidth * pixelRatio
-        this.canvas.height = this.canvasHeight * pixelRatio
-        
-        // If zoom level is still at default, calculate initial zoom to fit container
-        if (this.zoomLevel === 1.0 && this.panX === 0 && this.panY === 0) {
-            const scaleX = rect.width / this.canvasWidth
-            const scaleY = rect.height / this.canvasHeight
-            this.zoomLevel = Math.min(scaleX, scaleY) * 0.9 // 0.9 to add some padding
+        // Ensure we have valid dimensions
+        if (rect.width === 0 || rect.height === 0) {
+            console.log('Container not ready, retrying...')
+            setTimeout(() => this.resizeCanvas(), 50)
+            return
         }
+        
+        // Set canvas to logical size (not scaled by pixel ratio for simpler coordinate handling)
+        this.canvas.width = this.canvasWidth
+        this.canvas.height = this.canvasHeight
+        
+        // Calculate the base zoom level that fits the canvas fully in view with padding
+        // Account for the available space minus some padding
+        const availableWidth = rect.width - 40 // Leave 20px padding on each side
+        const availableHeight = rect.height - 40 // Leave 20px padding on top/bottom
+        
+        const scaleX = availableWidth / this.canvasWidth
+        const scaleY = availableHeight / this.canvasHeight
+        this.baseZoom = Math.min(scaleX, scaleY) // Use the limiting dimension
+        
+        // Ensure base zoom is reasonable (not too small)
+        this.baseZoom = Math.max(this.baseZoom, 0.1)
+        
+        // Set initial zoom to base zoom (100%)
+        this.zoomLevel = this.baseZoom
+        
+        // Reset pan to center
+        this.panX = 0
+        this.panY = 0
         
         // Apply current zoom and pan
         this.updateCanvasTransform()
         
-        // Reconfigure context after resize for smooth lines
-        this.ctx.scale(pixelRatio, pixelRatio)
+        // Update zoom display
+        this.updateZoomDisplay()
+        
+        // Configure context for smooth lines
         this.ctx.lineCap = 'round'
+        this.ctx.lineJoin = 'round'
+        this.ctx.imageSmoothingEnabled = true
+        this.ctx.imageSmoothingQuality = 'high'
         this.ctx.lineJoin = 'round'
         this.ctx.imageSmoothingEnabled = true
         this.ctx.imageSmoothingQuality = 'high'
@@ -169,6 +251,9 @@ export class CollaborativeCanvas {
     }
     
     setupUI() {
+        // Initialize ink pen as default and show taper slider
+        document.getElementById('taper-group').style.display = 'flex'
+        
         // Brush size control
         const brushSize = document.getElementById('brush-size')
         const brushSizeDisplay = document.getElementById('brush-size-display')
@@ -180,41 +265,34 @@ export class CollaborativeCanvas {
         })
         
         // Brush type icon buttons
-        const precisionBtn = document.getElementById('precision-brush')
-        const expressionBtn = document.getElementById('expression-brush')
+        const inkPenBtn = document.getElementById('ink-pen')
         const eraserBtn = document.getElementById('eraser-brush')
         
-        precisionBtn.addEventListener('click', () => {
-            this.brushType = 'precision'
+        inkPenBtn.addEventListener('click', () => {
+            this.brushType = 'ink-pen'
             this.isEraser = false
             this.isHandTool = false
-            precisionBtn.classList.add('active')
-            expressionBtn.classList.remove('active')
+            inkPenBtn.classList.add('active')
             eraserBtn.classList.remove('active')
             document.getElementById('hand-tool').classList.remove('active')
+            // Show taper slider when ink pen is selected
+            document.getElementById('taper-group').style.display = 'flex'
+            // Show brush size slider when ink pen is selected
+            document.getElementById('brush-size-group').style.display = 'flex'
             this.updateCursor()
-            console.log(`🖌️ Brush type changed to: Precision (fast=thin)`)
-        })
-        
-        expressionBtn.addEventListener('click', () => {
-            this.brushType = 'expression'
-            this.isEraser = false
-            this.isHandTool = false
-            expressionBtn.classList.add('active')
-            precisionBtn.classList.remove('active')
-            eraserBtn.classList.remove('active')
-            document.getElementById('hand-tool').classList.remove('active')
-            this.updateCursor()
-            console.log(`🖌️ Brush type changed to: Expression (fast=thick)`)
+            console.log(`�️ Brush type changed to: Ink Pen`)
         })
         
         eraserBtn.addEventListener('click', () => {
             this.isEraser = true
             this.isHandTool = false
             eraserBtn.classList.add('active')
-            precisionBtn.classList.remove('active')
-            expressionBtn.classList.remove('active')
+            inkPenBtn.classList.remove('active')
             document.getElementById('hand-tool').classList.remove('active')
+            // Hide taper slider when eraser is selected
+            document.getElementById('taper-group').style.display = 'none'
+            // Show brush size slider when eraser is selected
+            document.getElementById('brush-size-group').style.display = 'flex'
             this.updateCursor()
             console.log(`🧽 Eraser mode activated`)
         })
@@ -224,7 +302,7 @@ export class CollaborativeCanvas {
         const taperDisplay = document.getElementById('taper-display')
         
         taperSlider.addEventListener('input', (e) => {
-            this.taper = parseInt(e.target.value) / 100 // Convert to 0-1 range
+            this.taper = parseInt(e.target.value) / 100 // Convert to -1 to 1 range
             taperDisplay.textContent = `${e.target.value}%`
         })
         
@@ -257,19 +335,24 @@ export class CollaborativeCanvas {
                 if (this.isHandTool) {
                     handToolBtn.classList.add('active')
                     // Deactivate brush tools when hand tool is active
-                    document.getElementById('precision-brush').classList.remove('active')
-                    document.getElementById('expression-brush').classList.remove('active')
+                    document.getElementById('ink-pen').classList.remove('active')
                     document.getElementById('eraser-brush').classList.remove('active')
                     this.isEraser = false
+                    // Hide sliders when hand tool is active
+                    document.getElementById('taper-group').style.display = 'none'
+                    document.getElementById('brush-size-group').style.display = 'none'
                     this.canvas.style.cursor = 'grab'
                     console.log('🤚 Hand tool activated')
                 } else {
                     handToolBtn.classList.remove('active')
-                    // Reactivate precision brush as default
-                    document.getElementById('precision-brush').classList.add('active')
-                    this.brushType = 'precision'
+                    // Reactivate ink pen as default
+                    document.getElementById('ink-pen').classList.add('active')
+                    this.brushType = 'ink-pen'
+                    // Show sliders when returning to ink pen
+                    document.getElementById('taper-group').style.display = 'flex'
+                    document.getElementById('brush-size-group').style.display = 'flex'
                     this.updateCursor()
-                    console.log('🖌️ Drawing mode restored')
+                    console.log('�️ Drawing mode restored')
                 }
             })
         }
@@ -602,7 +685,7 @@ export class CollaborativeCanvas {
         this.ctx.globalAlpha = 1.0
     }
     
-    // Calculate tapered brush size based on brush type and velocity
+    // Calculate tapered brush size based on ink pen taper value and velocity
     calculateTaperedSize(baseSize) {
         // Eraser should always have consistent size without taper
         if (this.isEraser) {
@@ -630,25 +713,29 @@ export class CollaborativeCanvas {
         const maxVelocity = 2.5 // Adjusted for better sensitivity
         const normalizedVelocity = Math.min(avgVelocity / maxVelocity, 1.0)
         
-        // Smoother taper curve for both brush types
+        // Smoother taper curve for ink pen
         const smoothedVelocity = normalizedVelocity * normalizedVelocity * (3 - 2 * normalizedVelocity)
         
-        if (this.brushType === 'precision') {
-            // Precision Brush: faster = thinner, slower = thicker (original behavior)
-            const taperFactor = 1.0 - (smoothedVelocity * this.taper * 0.75) // Max 75% reduction
-            const minSize = baseSize * 0.25 // 25% minimum
-            return Math.max(baseSize * taperFactor, minSize)
-        } else if (this.brushType === 'expression') {
-            // Expression Brush: faster = thicker, slower = thinner (reversed behavior)
-            const taperFactor = 1.0 + (smoothedVelocity * this.taper * 0.75) // Max 75% increase
-            const maxSize = baseSize * 1.75 // 175% maximum
-            const minSize = baseSize * 0.25 // 25% minimum when slow
-            
-            // When velocity is low, reduce size; when high, increase size
-            const adjustedSize = baseSize * (0.25 + (smoothedVelocity * 1.5)) // Range from 25% to 175%
-            const finalSize = baseSize + ((adjustedSize - baseSize) * this.taper)
-            
-            return Math.max(Math.min(finalSize, maxSize), minSize)
+        // Ink pen behavior with positive and negative taper values
+        if (this.brushType === 'ink-pen') {
+            if (this.taper >= 0) {
+                // Positive taper (0% to 100%): Precision behavior - faster = thinner, slower = thicker
+                const taperFactor = 1.0 - (smoothedVelocity * this.taper * 0.75) // Max 75% reduction
+                const minSize = baseSize * 0.25 // 25% minimum
+                return Math.max(baseSize * taperFactor, minSize)
+            } else {
+                // Negative taper (-100% to 0%): Expression behavior - faster = thicker, slower = thinner
+                const absTaper = Math.abs(this.taper) // Convert to positive for calculations
+                const taperFactor = 1.0 + (smoothedVelocity * absTaper * 0.75) // Max 75% increase
+                const maxSize = baseSize * 1.75 // 175% maximum
+                const minSize = baseSize * 0.25 // 25% minimum when slow
+                
+                // When velocity is low, reduce size; when high, increase size
+                const adjustedSize = baseSize * (0.25 + (smoothedVelocity * 1.5)) // Range from 25% to 175%
+                const finalSize = baseSize + ((adjustedSize - baseSize) * absTaper)
+                
+                return Math.max(Math.min(finalSize, maxSize), minSize)
+            }
         }
         
         return baseSize
@@ -1099,22 +1186,31 @@ export class CollaborativeCanvas {
     setZoom(zoom) {
         this.zoomLevel = zoom
         this.updateCanvasTransform()
+        this.updateZoomDisplay()
+    }
+    
+    updateZoomDisplay() {
+        const zoomDisplay = document.getElementById('zoom-display')
+        if (zoomDisplay) {
+            // Calculate percentage relative to base zoom (100% = fully in view)
+            const percentage = Math.round((this.zoomLevel / this.baseZoom) * 100)
+            zoomDisplay.textContent = `${percentage}%`
+        }
     }
     
     updateCanvasTransform() {
-        const container = this.canvas.parentElement
-        const rect = container.getBoundingClientRect()
-        
         // Apply zoom and pan
         const displayWidth = this.canvasWidth * this.zoomLevel
         const displayHeight = this.canvasHeight * this.zoomLevel
         
         this.canvas.style.width = displayWidth + 'px'
         this.canvas.style.height = displayHeight + 'px'
-        this.canvas.style.transform = `translate(${-displayWidth/2 + this.panX * this.zoomLevel}px, ${-displayHeight/2 + this.panY * this.zoomLevel}px)`
+        this.canvas.style.transform = `translate(${this.panX * this.zoomLevel}px, ${this.panY * this.zoomLevel}px)`
         this.canvas.style.position = 'absolute'
         this.canvas.style.top = '50%'
         this.canvas.style.left = '50%'
+        this.canvas.style.marginTop = (-displayHeight/2) + 'px'
+        this.canvas.style.marginLeft = (-displayWidth/2) + 'px'
         this.canvas.style.border = '2px solid rgba(255, 255, 255, 0.3)'
         this.canvas.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)'
     }

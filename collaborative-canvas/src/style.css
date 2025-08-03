@@ -37,13 +37,18 @@ body {
 .toolbar-section {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 8px; /* Reduced from 20px to prevent wrapping */
+}
+
+.toolbar-section:first-child {
+    /* Connection status section - floated to far left */
+    margin-right: auto;
 }
 
 .toolbar-section:last-child {
-    margin-left: auto;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 8px;
+    width: 100%;
 }
 
 h1 {
@@ -57,6 +62,14 @@ h1 {
     gap: 10px;
     font-size: 0.9rem;
     position: relative;
+    margin-right: auto; /* Push to far left */
+}
+
+.main-toolbar-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Reduced from 20px to prevent column layout */
+    margin-left: auto; /* Push to far right */
 }
 
 .status-indicator {
@@ -189,12 +202,14 @@ h1 {
 .brush-icon-btn {
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.7);
+    color: white; /* Always white for SVG icons */
+    opacity: 0.5; /* Light grey effect for unselected state */
     width: 42px;
     height: 42px;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Optimized transitions */
+    will-change: opacity, transform; /* GPU acceleration hint */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -203,14 +218,23 @@ h1 {
 }
 
 .brush-icon-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     fill: currentColor;
+    transition: none; /* Remove transition from child elements */
+}
+
+.brush-icon-btn img {
+    width: 28px;
+    height: 28px;
+    filter: brightness(0) invert(1); /* Always white */
+    transition: none; /* Remove transition from child elements */
 }
 
 .brush-icon-btn:hover {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.4);
+    opacity: 0.8; /* Increased opacity on hover */
     transform: translateY(-2px) scale(1.05);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -218,7 +242,7 @@ h1 {
 .brush-icon-btn.active {
     background: rgba(255, 255, 255, 0.4);
     border-color: rgba(255, 255, 255, 0.8);
-    color: white;
+    opacity: 1; /* Full opacity for selected state */
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(255, 255, 255, 0.3);
     transform: translateY(-1px);
 }
@@ -283,16 +307,16 @@ h1 {
     flex: 1;
     position: relative;
     overflow: hidden;
-    background: white;
+    background: #5a5a5a;
     margin: 0;
     /* Remove display: flex to allow canvas to take full width */
 }
 
 .brush-toolbar {
     position: absolute;
-    top: 0;
-    left: 0;
-    background: rgba(0, 0, 0, 0.85);
+    top: 8px; /* Moved down 8px */
+    left: 8px; /* Moved right 8px from the left edge */
+    background: rgba(0, 0, 0, .65); /* Updated to rgba format */
     backdrop-filter: blur(10px);
     width: 70px;
     padding: 15px 10px;
@@ -301,6 +325,7 @@ h1 {
     align-items: center;
     justify-content: flex-start;
     border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px; /* Round all corners */
     z-index: 1000; /* Higher z-index to appear above canvas */
     /* Remove height: 100% to let it size to content */
 }
@@ -343,13 +368,13 @@ h1 {
 .color-picker-container #color-picker::-webkit-color-swatch {
     border: none;
     border-radius: 50%;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8); /* Brighter white outline */
 }
 
 .color-picker-container #color-picker::-moz-color-swatch {
     border: none;
     border-radius: 50%;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8); /* Brighter white outline */
 }
 
 #drawing-canvas {
@@ -401,9 +426,9 @@ h1 {
 }
 
 .users-panel {
-    position: absolute;
-    top: 100%; /* Position below the toolbar */
-    left: 0; /* Align with the left side */
+    position: fixed; /* Changed from absolute to fixed to escape any stacking context issues */
+    top: 52px; /* Updated position */
+    left: 80px; /* Updated position */
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(10px);
     border-radius: 10px;
@@ -412,7 +437,7 @@ h1 {
     max-height: 300px;
     overflow-y: auto;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 99999; /* Much higher than brush-toolbar (200) */
+    z-index: 999999; /* Increased from 99999 to ensure it's above everything */
     display: none; /* Hidden by default */
     opacity: 0;
     transform: translateY(-10px);
@@ -465,15 +490,17 @@ h1 {
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        margin-bottom: 8px;
     }
     
     /* Second section: Tools in compact grid - all on same row */
     .toolbar-section:last-child {
-        display: flex;
-        gap: 6px;
-        justify-content: flex-end;
-        margin-left: auto;
+        justify-content: space-between;
+        gap: 4px; /* Reduced from 6px to 4px */
+        width: 100%;
+    }
+    
+    .main-toolbar-buttons {
+        gap: 4px; /* Override desktop gap for mobile */
     }
     
     h1 {
@@ -563,6 +590,13 @@ h1 {
         justify-content: center;
     }
     
+    /* Mobile brush toolbar styling */
+    .brush-toolbar {
+        width: 55px;
+        border-radius: 6px; /* Round all corners */
+        background: rgba(0, 0, 0, .65); /* Updated to rgba format to match desktop */
+    }
+    
     /* Brush icons - make them column-oriented on mobile */
     .brush-icons {
         gap: 6px;
@@ -578,8 +612,8 @@ h1 {
     }
     
     .brush-icon-btn svg {
-        width: 16px;
-        height: 16px;
+        width: 24px;
+        height: 24px;
     }
     
     /* Color picker in left toolbar - mobile styles */
@@ -598,13 +632,13 @@ h1 {
     .color-picker-container #color-picker::-webkit-color-swatch {
         border: none;
         border-radius: 50%;
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8); /* Brighter white outline for mobile */
     }
     
     .color-picker-container #color-picker::-moz-color-swatch {
         border: none;
         border-radius: 50%;
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8); /* Brighter white outline for mobile */
     }
     
     /* Mobile-specific tool controls with touch sliders */
@@ -743,14 +777,14 @@ h1 {
     
     /* Users panel positioning for mobile */
     .users-panel {
-        position: absolute;
-        top: 100%; /* Position below the toolbar */
-        left: 0; /* Align with the left side */
+        position: fixed; /* Changed from absolute to fixed */
+        top: 52px; /* Updated position */
+        left: 72px; /* Updated position */
         right: auto;
         bottom: auto;
         max-height: 200px;
         min-width: 180px;
-        z-index: 99999; /* Much higher than brush-toolbar */
+        z-index: 999999; /* Increased to match desktop */
         background: rgba(0, 0, 0, 0.9);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -878,6 +912,22 @@ h1 {
     height: 20px;
 }
 
+.zoom-display {
+    width: 48px;
+    height: 48px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Hand tool active state */
 #hand-tool.active {
     background: rgba(255, 255, 255, 0.2);
@@ -900,5 +950,11 @@ h1 {
     .zoom-btn svg {
         width: 18px;
         height: 18px;
+    }
+    
+    .zoom-display {
+        width: 44px;
+        height: 44px;
+        font-size: 11px;
     }
 }

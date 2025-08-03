@@ -80,17 +80,17 @@ class MobileUI {
                 isDragging = false
             }
             
-            // Touch events
+            // Touch events (optimized for performance)
             thumb.addEventListener('touchstart', startDrag, { passive: false })
             track.addEventListener('touchstart', startDrag, { passive: false })
             document.addEventListener('touchmove', drag, { passive: false })
-            document.addEventListener('touchend', endDrag)
+            document.addEventListener('touchend', endDrag, { passive: true })
             
-            // Mouse events for desktop testing
-            thumb.addEventListener('mousedown', startDrag)
-            track.addEventListener('mousedown', startDrag)
-            document.addEventListener('mousemove', drag)
-            document.addEventListener('mouseup', endDrag)
+            // Mouse events for desktop testing (passive for better performance)
+            thumb.addEventListener('mousedown', startDrag, { passive: true })
+            track.addEventListener('mousedown', startDrag, { passive: true })
+            document.addEventListener('mousemove', drag, { passive: true })
+            document.addEventListener('mouseup', endDrag, { passive: true })
         })
     }
     
@@ -283,9 +283,14 @@ class MobileUI {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const canvas = new CollaborativeCanvas()
-    canvas.init()
-    
-    // Initialize mobile UI
-    const mobileUI = new MobileUI()
+    // Use requestAnimationFrame to defer heavy initialization
+    requestAnimationFrame(() => {
+        const canvas = new CollaborativeCanvas()
+        canvas.init()
+        
+        // Defer mobile UI initialization to next frame
+        requestAnimationFrame(() => {
+            const mobileUI = new MobileUI()
+        })
+    })
 })

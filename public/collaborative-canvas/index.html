@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Collaborative Canvas</title>
     <link rel="icon" href="/collaborative-canvas/assets/canvas-icon-DnFwUtQy.svg" type="image/svg+xml">
-  <script type="module" crossorigin src="/collaborative-canvas/assets/index-D5Tsvbmz.js"></script>
-  <link rel="stylesheet" crossorigin href="/collaborative-canvas/assets/index-DKfPMaG_.css">
+  <script type="module" crossorigin src="/collaborative-canvas/assets/index-NQEwXjBr.js"></script>
+  <link rel="stylesheet" crossorigin href="/collaborative-canvas/assets/index-B9DFFY85.css">
 </head>
 <body>
     <div id="app">
@@ -24,10 +24,9 @@
                             <div class="users-list" id="users-list"></div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="toolbar-section">
-                    <button id="undo-btn" class="tool-btn" title="Undo last action">
+                    
+                    <div class="main-toolbar-buttons">
+                        <button id="undo-btn" class="tool-btn" title="Undo last action">
                         <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                             <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
                         </svg>
@@ -57,16 +56,12 @@
                         </div>
                     </div>
                     
-                                        <div class="tool-group slider-group" id="taper-group">
+                                        <div class="tool-group slider-group" id="taper-group" style="display: none;">
                         <label for="taper">
-                            <svg class="slider-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M3 8C6 8 9 12 12 12C15 12 18 16 21 16" stroke-width="4" stroke-linecap="round"/>
-                                <path d="M3 10C6 10 9 12 12 12C15 12 18 14 21 14" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
-                                <path d="M3 12C6 12 9 12 12 12C15 12 18 12 21 12" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
-                            </svg>
+                            <img src="./collaborative-canvas/assets/taper-icon.svg" alt="Taper" class="slider-icon" style="width: 16px; height: 16px; filter: brightness(0) invert(1);">
                             <span class="slider-text">Taper:</span>
                         </label>
-                        <input type="range" id="taper" min="0" max="100" value="50">
+                        <input type="range" id="taper" min="-100" max="100" value="50">
                         <span id="taper-display" class="value-display">50%</span>
                         
                         <!-- Mobile Slider Popup -->
@@ -83,33 +78,23 @@
                     
                     <button id="clear-canvas" class="tool-btn">Clear</button>
                     <button id="save-canvas" class="tool-btn">Save Image</button>
+                    </div>
                 </div>
             </div>
             
             <div class="canvas-wrapper">
                 <div class="brush-toolbar">
                     <div class="brush-icons">
-                        <button id="precision-brush" class="brush-icon-btn active" title="Precision - Fast=Thin, Slow=Thick">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M16 8L14 6L8 12L6 14L4 16L6 18L8 16L10 14L16 8Z"/>
-                                <ellipse cx="7" cy="15" rx="1.2" ry="0.6" transform="rotate(45 7 15)"/>
-                            </svg>
-                        </button>
-                        <button id="expression-brush" class="brush-icon-btn" title="Expression - Fast=Thick, Slow=Thin">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M16 8L14 6L8 12L6 14L4 16L6 18L8 16L10 14L16 8Z"/>
-                                <ellipse cx="7" cy="15" rx="2" ry="1" transform="rotate(45 7 15)"/>
-                            </svg>
+                        <button id="ink-pen" class="brush-icon-btn active" title="Ink Pen - Pressure sensitive drawing tool">
+                            <img src="/collaborative-canvas/collaborative-canvas/assets/inkpen-icon.svg" alt="Ink Pen" style="width: 28px; height: 28px; filter: brightness(0) invert(1);">
                         </button>
                         <button id="eraser-brush" class="brush-icon-btn" title="Eraser - Remove content">
                             <svg viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M16.24 3.56L21.44 8.76C22.15 9.47 22.15 10.64 21.44 11.35L11.35 21.44C10.64 22.15 9.47 22.15 8.76 21.44L3.56 16.24C2.85 15.53 2.85 14.36 3.56 13.65L13.65 3.56C14.36 2.85 15.53 2.85 16.24 3.56M6.99 14.29L9.71 17.01L11.13 15.59L8.41 12.87L6.99 14.29Z"/>
                             </svg>
                         </button>
-                        <button id="hand-tool" class="brush-icon-btn" title="Hand Tool - Pan the canvas">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M13.5 7C13.5 5.34 12.16 4 10.5 4S7.5 5.34 7.5 7V11.5H6.5C5.12 11.5 4 12.62 4 14S5.12 16.5 6.5 16.5H7.5V20C7.5 21.66 8.84 23 10.5 23S13.5 21.66 13.5 20V18H15.5C16.33 18 17 17.33 17 16.5S16.33 15 15.5 15H13.5V14C13.5 13.17 14.17 12.5 15 12.5H17C18.66 12.5 20 11.16 20 9.5S18.66 6.5 17 6.5H13.5V7Z"/>
-                            </svg>
+                                                <button id="hand-tool" class="brush-icon-btn" title="Hand Tool - Pan the canvas">
+                            <img src="/collaborative-canvas/move-icon.svg" alt="Move Tool">
                         </button>
                     </div>
                     
@@ -132,6 +117,7 @@
                             <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/>
                         </svg>
                     </button>
+                    <div class="zoom-display" id="zoom-display">100%</div>
                     <button id="zoom-out" class="zoom-btn" title="Zoom Out">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
