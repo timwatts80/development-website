@@ -2,6 +2,7 @@
   "version": 2,
   "name": "development-website",
   "framework": null,
+  "_comment": "Updated build process to sync both routes automatically",
   "installCommand": "cd tetris && npm install && cd ../collaborative-canvas && npm install",
   "buildCommand": "cd tetris && npm run build && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm run build && cp -r ../public/collaborative-canvas/* ../public/ink-pen/",
   "outputDirectory": "public",
