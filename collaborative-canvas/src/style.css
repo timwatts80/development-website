@@ -321,8 +321,7 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px;
-    /* Remove display: flex to allow canvas to take full width */
+    /* Removed padding - margins are now handled in JavaScript */
 }
 
 .brush-toolbar {
@@ -395,7 +394,9 @@ h1 {
     /* Custom cursor will be set dynamically by JavaScript */
     background: white;
     /* Centering will be handled by canvas-wrapper flexbox */
-    /* Remove absolute positioning to allow proper centering */
+    /* Constrain canvas to fit within the padding */
+    max-width: 100%;
+    max-height: 100%;
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }

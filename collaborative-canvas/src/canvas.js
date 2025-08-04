@@ -56,6 +56,10 @@ export class CollaborativeCanvas {
         this.canvasWidth = 1536 // Fixed canvas width (desktop landscape)
         this.canvasHeight = 1080 // Fixed canvas height
         
+        // Initialize display dimensions (will be updated in resizeCanvas)
+        this.displayWidth = this.canvasWidth
+        this.displayHeight = this.canvasHeight
+        
         // For mobile, we'll calculate responsive dimensions
         this.isMobile = window.innerWidth <= 768
         if (this.isMobile) {
@@ -112,16 +116,16 @@ export class CollaborativeCanvas {
         // Get the actual container dimensions
         const rect = container.getBoundingClientRect()
         
-        // The container already has 16px padding applied via CSS, so the rect gives us the inner dimensions
-        // We should use the full available space since the CSS padding handles the margins
-        const availableWidth = rect.width
-        const availableHeight = rect.height
+        // Directly account for 16px margin on all sides (32px total reduction)
+        const margin = 16
+        const availableWidth = rect.width - (margin * 2)
+        const availableHeight = rect.height - (margin * 2)
         
-        // Set canvas dimensions to fill the available space
+        // Set canvas dimensions to fit within the margins
         this.canvasWidth = Math.max(availableWidth, 320) // Minimum width
         this.canvasHeight = Math.max(availableHeight, 240) // Minimum height
         
-        console.log(`Mobile canvas size: ${this.canvasWidth}x${this.canvasHeight}, container: ${rect.width}x${rect.height}`)
+        console.log(`Mobile canvas size: ${this.canvasWidth}x${this.canvasHeight}, container: ${rect.width}x${rect.height}, margin: ${margin}px`)
     }
     
     init() {
@@ -132,13 +136,29 @@ export class CollaborativeCanvas {
         this.updateConnectionStatus('connecting', 'Connecting to server...')
         this.updateCursor() // Set initial cursor
         
-        // Delay the initial positioning to ensure container is properly sized
-        setTimeout(() => {
-            this.resizeCanvas()
-        }, 100)
+        // Ensure proper canvas sizing from the start
+        this.ensureProperCanvasSizing()
         
         // Save initial canvas state for undo functionality
         this.saveCanvasState()
+    }
+    
+    ensureProperCanvasSizing() {
+        // Wait for the container to be properly laid out before sizing
+        const container = document.querySelector('.canvas-wrapper')
+        if (!container) {
+            setTimeout(() => this.ensureProperCanvasSizing(), 50)
+            return
+        }
+        
+        const rect = container.getBoundingClientRect()
+        if (rect.width === 0 || rect.height === 0) {
+            setTimeout(() => this.ensureProperCanvasSizing(), 50)
+            return
+        }
+        
+        // Container is ready, now resize the canvas properly
+        this.resizeCanvas()
     }
     
     setupCanvas() {
@@ -154,7 +174,7 @@ export class CollaborativeCanvas {
         this.ctx.imageSmoothingEnabled = true
         this.ctx.imageSmoothingQuality = 'high'
         
-        // Set canvas to initial size
+        // Set canvas to initial logical size (display size will be set in resizeCanvas)
         this.canvas.width = this.canvasWidth
         this.canvas.height = this.canvasHeight
         
@@ -162,30 +182,14 @@ export class CollaborativeCanvas {
         this.ctx.fillStyle = 'white'
         this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
         
-        // Enable sub-pixel rendering for smoother lines
-        const pixelRatio = window.devicePixelRatio || 1
-        if (pixelRatio > 1) {
-            this.canvas.style.width = this.canvas.width + 'px'
-            this.canvas.style.height = this.canvas.height + 'px'
-            this.canvas.width *= pixelRatio
-            this.canvas.height *= pixelRatio
-            this.ctx.scale(pixelRatio, pixelRatio)
-        }
+        // Note: Display sizing and pixel ratio handling will be done in resizeCanvas()
+        // to ensure proper padding calculations
     }
     
     resizeCanvas() {
         // Check if we're on mobile and update canvas dimensions if needed
         const wasMobile = this.isMobile
         this.isMobile = window.innerWidth <= 768
-        
-        // If mobile state changed or we're on mobile, recalculate canvas dimensions
-        if (this.isMobile && (!wasMobile || this.isMobile)) {
-            this.setMobileCanvasDimensions()
-        } else if (!this.isMobile && wasMobile) {
-            // Switched from mobile to desktop, restore desktop dimensions
-            this.canvasWidth = 1536
-            this.canvasHeight = 1080
-        }
         
         // Use canvas-wrapper as the container for measuring available space
         const container = document.querySelector('.canvas-wrapper')
@@ -203,27 +207,61 @@ export class CollaborativeCanvas {
             return
         }
         
-        // Set canvas to logical size (not scaled by pixel ratio for simpler coordinate handling)
+        // Calculate available space with 16px margin on all sides
+        const margin = 16
+        const availableWidth = rect.width - (margin * 2)
+        const availableHeight = rect.height - (margin * 2)
+        
+        if (this.isMobile) {
+            // Mobile: Set canvas dimensions to fit within margins
+            this.canvasWidth = Math.max(availableWidth, 320)
+            this.canvasHeight = Math.max(availableHeight, 240)
+            this.displayWidth = this.canvasWidth
+            this.displayHeight = this.canvasHeight
+        } else {
+            // Desktop: Use fixed canvas size but scale display to fit within margins
+            this.canvasWidth = 1536
+            this.canvasHeight = 1080
+            
+            // Scale down to fit within available space if needed
+            const scaleX = availableWidth / this.canvasWidth
+            const scaleY = availableHeight / this.canvasHeight
+            const scale = Math.min(scaleX, scaleY, 1) // Don't scale up, only down if needed
+            
+            this.displayWidth = this.canvasWidth * scale
+            this.displayHeight = this.canvasHeight * scale
+        }
+        
+        // Set canvas to logical size
         this.canvas.width = this.canvasWidth
         this.canvas.height = this.canvasHeight
         
-        // For the canvas display size, use the actual canvas dimensions
-        // The canvas-wrapper already provides 16px padding via CSS
-        this.canvas.style.width = this.canvasWidth + 'px'
-        this.canvas.style.height = this.canvasHeight + 'px'
+        // Set display size
+        this.canvas.style.width = this.displayWidth + 'px'
+        this.canvas.style.height = this.displayHeight + 'px'
         
-        // Update cursors layer to match canvas size and position
+        // Handle high DPI displays for crisp rendering
+        const pixelRatio = window.devicePixelRatio || 1
+        if (pixelRatio > 1) {
+            // Scale the actual canvas buffer for crisp rendering
+            this.canvas.width = this.canvasWidth * pixelRatio
+            this.canvas.height = this.canvasHeight * pixelRatio
+            this.ctx.scale(pixelRatio, pixelRatio)
+            
+            // Redraw white background after scaling
+            this.ctx.fillStyle = 'white'
+            this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
+        }
+        
+        // Update cursors layer to match canvas display size and position
         const cursorsLayer = document.getElementById('cursors-layer')
         if (cursorsLayer) {
-            cursorsLayer.style.width = this.canvasWidth + 'px'
-            cursorsLayer.style.height = this.canvasHeight + 'px'
+            cursorsLayer.style.width = this.displayWidth + 'px'
+            cursorsLayer.style.height = this.displayHeight + 'px'
         }
         
         // Calculate the base zoom level that fits the canvas fully in view
-        // The rect already represents the inner dimensions after CSS padding
-        const availableWidth = rect.width
-        const availableHeight = rect.height
-        
+        // Use the available space (with margins) for zoom calculation
         const scaleX = availableWidth / this.canvasWidth
         const scaleY = availableHeight / this.canvasHeight
         this.baseZoom = Math.min(scaleX, scaleY) // Use the limiting dimension
