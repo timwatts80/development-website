@@ -60,6 +60,9 @@ export class CollaborativeCanvas {
         this.displayWidth = this.canvasWidth
         this.displayHeight = this.canvasHeight
         
+        // Flag to track if initial sizing is complete
+        this.initialSizingComplete = false
+        
         // For mobile, we'll calculate responsive dimensions
         this.isMobile = window.innerWidth <= 768
         if (this.isMobile) {
@@ -165,8 +168,16 @@ export class CollaborativeCanvas {
         this.canvas = document.getElementById('drawing-canvas')
         this.ctx = this.canvas.getContext('2d')
         
-        // Set up resize listener (initial sizing will be done in init())
-        window.addEventListener('resize', () => this.resizeCanvas())
+        // Set up resize listener (only for initial sizing and mobile orientation changes)
+        window.addEventListener('resize', () => {
+            // Only handle resize if initial sizing isn't complete, or if it's a mobile orientation change
+            const wasMobile = this.isMobile
+            this.isMobile = window.innerWidth <= 768
+            
+            if (!this.initialSizingComplete || (this.isMobile !== wasMobile)) {
+                this.resizeCanvas()
+            }
+        })
         
         // Configure drawing context for maximum smoothness
         this.ctx.lineCap = 'round'
@@ -294,6 +305,9 @@ export class CollaborativeCanvas {
         // Set white background
         this.ctx.fillStyle = 'white'
         this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
+        
+        // Mark initial sizing as complete
+        this.initialSizingComplete = true
     }
     
     setupUI() {
