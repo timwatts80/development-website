@@ -109,23 +109,18 @@ export class CollaborativeCanvas {
             return
         }
         
-        // Use viewport dimensions as fallback if container isn't ready
-        const viewportWidth = window.innerWidth
-        const viewportHeight = window.innerHeight
+        // Get the actual container dimensions (already accounts for padding)
+        const rect = container.getBoundingClientRect()
         
-        // Account for toolbar height (approximately 80px) and padding
-        const toolbarHeight = 80
-        const padding = 32 // 16px on all sides = 32px total per dimension
-        
-        // Calculate available space
-        const availableWidth = viewportWidth - padding
-        const availableHeight = viewportHeight - toolbarHeight - padding
+        // Use the container's inner dimensions (minus the 16px padding already applied)
+        const availableWidth = rect.width - 32 // 16px padding on each side
+        const availableHeight = rect.height - 32 // 16px padding on top and bottom
         
         // Set canvas dimensions to fill the available space
         this.canvasWidth = Math.max(availableWidth, 320) // Minimum width
         this.canvasHeight = Math.max(availableHeight, 240) // Minimum height
         
-        console.log(`Mobile canvas size: ${this.canvasWidth}x${this.canvasHeight}`)
+        console.log(`Mobile canvas size: ${this.canvasWidth}x${this.canvasHeight}, container: ${rect.width}x${rect.height}`)
     }
     
     init() {
@@ -211,10 +206,22 @@ export class CollaborativeCanvas {
         this.canvas.width = this.canvasWidth
         this.canvas.height = this.canvasHeight
         
-        // Calculate the base zoom level that fits the canvas fully in view with padding
-        // Account for the available space minus some padding
-        const availableWidth = rect.width - 40 // Leave 20px padding on each side
-        const availableHeight = rect.height - 40 // Leave 20px padding on top/bottom
+        // For the canvas display size, use the actual canvas dimensions
+        // The canvas-wrapper already provides 16px padding via CSS
+        this.canvas.style.width = this.canvasWidth + 'px'
+        this.canvas.style.height = this.canvasHeight + 'px'
+        
+        // Update cursors layer to match canvas size and position
+        const cursorsLayer = document.getElementById('cursors-layer')
+        if (cursorsLayer) {
+            cursorsLayer.style.width = this.canvasWidth + 'px'
+            cursorsLayer.style.height = this.canvasHeight + 'px'
+        }
+        
+        // Calculate the base zoom level that fits the canvas fully in view
+        // No additional padding needed since canvas-wrapper handles it
+        const availableWidth = rect.width - 32 // Account for 16px padding on each side
+        const availableHeight = rect.height - 32 // Account for 16px padding on top/bottom
         
         const scaleX = availableWidth / this.canvasWidth
         const scaleY = availableHeight / this.canvasHeight
