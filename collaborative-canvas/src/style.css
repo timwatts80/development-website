@@ -378,15 +378,15 @@ h1 {
 }
 
 .color-picker-container #color-picker::-webkit-color-swatch {
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.85);
     border-radius: 50%;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8); /* Brighter white outline */
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85);
 }
 
 .color-picker-container #color-picker::-moz-color-swatch {
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.85);
     border-radius: 50%;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8); /* Brighter white outline */
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85);
 }
 
 #drawing-canvas {
@@ -643,15 +643,15 @@ h1 {
     }
     
     .color-picker-container #color-picker::-webkit-color-swatch {
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.85);
         border-radius: 50%;
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8); /* Brighter white outline for mobile */
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85);
     }
     
     .color-picker-container #color-picker::-moz-color-swatch {
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.85);
         border-radius: 50%;
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8); /* Brighter white outline for mobile */
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85);
     }
     
     /* Mobile-specific tool controls with touch sliders */
