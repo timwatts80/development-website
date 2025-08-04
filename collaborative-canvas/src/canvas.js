@@ -1011,7 +1011,7 @@ export class CollaborativeCanvas {
     
     saveCanvas() {
         const link = document.createElement('a')
-        link.download = `collaborative-canvas-${Date.now()}.png`
+        link.download = `my-digital-ink-pen-${Date.now()}.png`
         link.href = this.canvas.toDataURL()
         link.click()
     }
