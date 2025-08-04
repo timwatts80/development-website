@@ -109,12 +109,13 @@ export class CollaborativeCanvas {
             return
         }
         
-        // Get the actual container dimensions (already accounts for padding)
+        // Get the actual container dimensions
         const rect = container.getBoundingClientRect()
         
-        // Use the container's inner dimensions (minus the 16px padding already applied)
-        const availableWidth = rect.width - 32 // 16px padding on each side
-        const availableHeight = rect.height - 32 // 16px padding on top and bottom
+        // The container already has 16px padding applied via CSS, so the rect gives us the inner dimensions
+        // We should use the full available space since the CSS padding handles the margins
+        const availableWidth = rect.width
+        const availableHeight = rect.height
         
         // Set canvas dimensions to fill the available space
         this.canvasWidth = Math.max(availableWidth, 320) // Minimum width
@@ -219,9 +220,9 @@ export class CollaborativeCanvas {
         }
         
         // Calculate the base zoom level that fits the canvas fully in view
-        // No additional padding needed since canvas-wrapper handles it
-        const availableWidth = rect.width - 32 // Account for 16px padding on each side
-        const availableHeight = rect.height - 32 // Account for 16px padding on top/bottom
+        // The rect already represents the inner dimensions after CSS padding
+        const availableWidth = rect.width
+        const availableHeight = rect.height
         
         const scaleX = availableWidth / this.canvasWidth
         const scaleY = availableHeight / this.canvasHeight
