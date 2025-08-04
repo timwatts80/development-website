@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Collaborative Canvas</title>
+    <link rel="icon" href="./assets/canvas-icon-DnFwUtQy.svg" type="image/svg+xml">
+  <script type="module" crossorigin src="./assets/index-CFSamwFx.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DWpjqnCx.css">
+</head>
+<body>
+    <div id="app">
+        <div class="canvas-container">
+            <div class="toolbar">
+                <div class="toolbar-section">
+                    <h1>🎨 Collaborative Canvas</h1>
+                    <div class="connection-status">
+                        <span class="status-indicator" id="status-indicator">●</span>
+                        <span id="status-text">Connecting...</span>
+                        <span id="user-count" class="user-count">0 users online</span>
+                    </div>
+                </div>
+                
+                <div class="toolbar-section">
+                    <div class="tool-group">
+                        <label for="brush-size">Brush Size:</label>
+                        <input type="range" id="brush-size" min="1" max="50" value="5">
+                        <span id="brush-size-display">5px</span>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <label for="brush-type">Brush Type:</label>
+                        <select id="brush-type">
+                            <option value="velocity">Velocity Brush</option>
+                            <option value="pen">Brush Pen</option>
+                        </select>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <label for="taper">Taper:</label>
+                        <input type="range" id="taper" min="0" max="100" value="50">
+                        <span id="taper-display">50%</span>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <label for="color-picker">Color:</label>
+                        <input type="color" id="color-picker" value="#000000">
+                    </div>
+                    
+                    <div class="tool-group">
+                        <button id="clear-canvas" class="tool-btn">Clear Canvas</button>
+                        <button id="save-canvas" class="tool-btn">Save Image</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="canvas-wrapper">
+                <canvas id="drawing-canvas"></canvas>
+                <div class="cursors-layer" id="cursors-layer"></div>
+            </div>
+            
+            <div class="users-panel" id="users-panel">
+                <h3>Active Users</h3>
+                <div class="users-list" id="users-list"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
