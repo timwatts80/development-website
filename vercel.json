@@ -2,6 +2,11 @@
   "version": 2,
   "name": "development-website",
   "framework": null,
+  "functions": {
+    "app/api/**/*.js": {
+      "runtime": "nodejs22.x"
+    }
+  },
   "build": {
     "env": {
       "NODE_VERSION": "22.11.0"
