@@ -1,9 +1,8 @@
 'use client'
 
-import { Plus, CheckCircle, Circle, Calendar, Target, TrendingUp } from 'lucide-react'
-import { useState } from 'react'
+import React, { useState } from 'react'
+import { CheckCircle, Circle, Plus, Target, Calendar, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import ThemeToggle from '@/components/ThemeToggle'
 
 interface Task {
   id: string
@@ -49,7 +48,7 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Header */}
-      <div className="mb-8 flex justify-between items-start">
+      <div className="mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Today&apos;s Progress</h1>
           <p className="text-gray-600 dark:text-gray-400">{new Date().toLocaleDateString('en-US', { 
@@ -59,7 +58,6 @@ export default function Home() {
             day: 'numeric' 
           })}</p>
         </div>
-        <ThemeToggle />
       </div>
 
       {/* Quick Stats */}
