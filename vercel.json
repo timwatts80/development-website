@@ -7,8 +7,8 @@
       "runtime": "nodejs22.x"
     }
   },
-  "installCommand": "cd tetris && npm install && cd ../collaborative-canvas && npm install && cd ../daily-tracking && npm install",
-  "buildCommand": "cd tetris && npm run build && mkdir -p ../public/tetris && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm run build && mkdir -p ../public/ink-pen && cp -r dist/* ../public/ink-pen/ && cd ../daily-tracking && npm run build && mkdir -p ../public/daily-tracking && cp -r out/* ../public/daily-tracking/",
+  "installCommand": "echo 'Dependencies installed by build script'",
+  "buildCommand": "./build.sh",
   "outputDirectory": "public",
   "routes": [
     {
