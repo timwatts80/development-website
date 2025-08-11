@@ -2,11 +2,6 @@
   "version": 2,
   "name": "development-website",
   "framework": null,
-  "functions": {
-    "**": {
-      "runtime": "nodejs22.x"
-    }
-  },
   "installCommand": "echo 'Dependencies installed by build script'",
   "buildCommand": "./build.sh",
   "outputDirectory": "public",
