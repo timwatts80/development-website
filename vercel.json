@@ -2,13 +2,21 @@
   "version": 2,
   "name": "development-website",
   "framework": null,
-  "installCommand": "cd tetris && npm install && cd ../collaborative-canvas && npm install",
-  "buildCommand": "cd tetris && npm run build && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm run build && cp -r ../public/collaborative-canvas/* ../public/ink-pen/",
+  "installCommand": "cd tetris && npm install && cd ../collaborative-canvas && npm install && cd ../daily-tracking && npm install",
+  "buildCommand": "cd tetris && npm run build && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm run build && cp -r ../public/collaborative-canvas/* ../public/ink-pen/ && cd ../daily-tracking && npm run build && cp -r out/* ../public/daily-tracking/",
   "outputDirectory": "public",
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/api/$1"
+    },
+    {
+      "src": "/daily-tracking/?$",
+      "dest": "/daily-tracking/index.html"
+    },
+    {
+      "src": "/daily-tracking/(.*)",
+      "dest": "/daily-tracking/$1"
     },
     {
       "src": "/tetris/?$",

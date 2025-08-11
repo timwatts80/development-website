@@ -112,7 +112,7 @@ GITHUB_CLIENT_SECRET=your_github_client_secret`}
       ))}
       
       <p className="text-xs text-gray-500 text-center mt-4">
-        We'll never post anything without your permission
+        We&apos;ll never post anything without your permission
       </p>
     </div>
   )

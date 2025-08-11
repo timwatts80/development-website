@@ -51,7 +51,7 @@ export default function Home() {
       {/* Header */}
       <div className="mb-8 flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Today's Progress</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Today&apos;s Progress</h1>
           <p className="text-gray-600 dark:text-gray-400">{new Date().toLocaleDateString('en-US', { 
             weekday: 'long', 
             year: 'numeric', 
@@ -116,7 +116,7 @@ export default function Home() {
       {/* Tasks List */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
         <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Today's Tasks & Habits</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Today&apos;s Tasks & Habits</h2>
           
           {tasks.length === 0 ? (
             <div className="text-center py-8">
@@ -177,7 +177,7 @@ export default function Home() {
         <div className="mt-8 bg-gradient-to-r from-green-400 to-blue-500 text-white p-6 rounded-lg shadow-lg">
           <div className="text-center">
             <h3 className="text-xl font-bold mb-2">🎉 Great job!</h3>
-            <p>You've completed {completionRate}% of your tasks today. Keep up the excellent work!</p>
+            <p>You&apos;ve completed {completionRate}% of your tasks today. Keep up the excellent work!</p>
           </div>
         </div>
       )}
