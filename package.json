@@ -6,7 +6,8 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "build": "mkdir -p public/tetris public/ink-pen public/daily-tracking && cp index.html public/ && cd tetris && npm install && npm run build && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm install && npm run build && cp -r dist/* ../public/ink-pen/ && cd ../daily-tracking && npm install && npm run build && cp -r out/* ../public/daily-tracking/",
+    "build": "node build-script.js",
+    "build-shell": "mkdir -p public/tetris public/ink-pen public/daily-tracking && cp index.html public/ && cd tetris && npm install && npm run build && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm install && npm run build && cp -r dist/* ../public/ink-pen/ && cd ../daily-tracking && npm install && npm run build && cp -r out/* ../public/daily-tracking/",
     "build-local": "mkdir -p public/tetris public/collaborative-canvas && cp index.html public/ && cd tetris && npm install && npm run build && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm install && npm run build && cp -r dist/* ../public/collaborative-canvas/",
     "dev": "cd tetris && npm run dev",
     "dev:canvas": "cd collaborative-canvas && npm run dev",
