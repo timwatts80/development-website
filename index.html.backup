@@ -290,7 +290,6 @@
                 <li><a href="/">Home</a></li>
                 <li><a href="/tetris">Tetris</a></li>
                 <li><a href="/ink-pen">Ink Pen</a></li>
-                <li><a href="http://localhost:3001">Daily Tracker</a></li>
             </ul>
             <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
                 ☰
@@ -329,20 +328,6 @@
                         <li>Touch and mouse support</li>
                         <li>Live collaboration indicators</li>
                         <li>Instant synchronization</li>
-                    </ul>
-                </a>
-
-                <a href="http://localhost:3001" class="game-card">
-                    <div class="game-title">📅 Daily Tracker</div>
-                    <div class="game-description">
-                        Personal habit and task tracking app with authentication
-                    </div>
-                    <ul class="game-features">
-                        <li>Secure login with Google/GitHub</li>
-                        <li>Daily habit tracking</li>
-                        <li>Task management system</li>
-                        <li>Progress visualization</li>
-                        <li>Mobile-first responsive design</li>
                     </ul>
                 </a>
             </div>

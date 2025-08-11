@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "name": "development-website",
+  "framework": null,
+  "installCommand": "cd tetris && npm install && cd ../collaborative-canvas && npm install",
+  "buildCommand": "cd tetris && npm run build && cp -r dist/* ../public/tetris/ && cd ../collaborative-canvas && npm run build && cp -r ../public/collaborative-canvas/* ../public/ink-pen/",
+  "outputDirectory": "public",
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/tetris/?$",
+      "dest": "/tetris/index.html"
+    },
+    {
+      "src": "/ink-pen/?$",
+      "dest": "/ink-pen/index.html"
+    },
+    {
+      "src": "/collaborative-canvas/?$",
+      "dest": "/ink-pen/index.html"
+    },
+    {
+      "src": "/collaborative-canvas/assets/(.+)",
+      "dest": "/collaborative-canvas/assets/$1",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache", 
+        "Expires": "0"
+      }
+    },
+    {
+      "src": "/tetris/assets/(.+)",
+      "dest": "/tetris/assets/$1",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      }
+    },
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
+}

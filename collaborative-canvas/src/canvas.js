@@ -53,8 +53,10 @@ export class CollaborativeCanvas {
         this.baseZoom = 1.0 // The zoom level that represents 100% (fully in view)
         this.minZoom = 0.1
         this.maxZoom = 5.0
-        this.canvasWidth = 1536 // Fixed canvas width (desktop landscape)
-        this.canvasHeight = 1080 // Fixed canvas height
+        
+        // Canvas dimensions will be set once based on wrapper size, then stay static
+        this.canvasWidth = 800  // Default, will be set in resizeCanvas
+        this.canvasHeight = 600 // Default, will be set in resizeCanvas
         
         // Initialize display dimensions (will be updated in resizeCanvas)
         this.displayWidth = this.canvasWidth
@@ -78,7 +80,7 @@ export class CollaborativeCanvas {
         this.isHandTool = false // Whether hand tool is active
     }
     
-    // Convert screen coordinates to canvas coordinates accounting for zoom and pan
+        // Convert screen coordinates to canvas coordinates
     getCanvasCoordinates(clientX, clientY) {
         const rect = this.canvas.getBoundingClientRect()
         
@@ -86,7 +88,8 @@ export class CollaborativeCanvas {
         const relativeX = (clientX - rect.left) / rect.width
         const relativeY = (clientY - rect.top) / rect.height
         
-        // Convert to canvas coordinates (since canvas is now 1:1 with logical size)
+        // Convert to canvas coordinates
+        // getBoundingClientRect already accounts for CSS transforms from zoom
         const canvasX = relativeX * this.canvasWidth
         const canvasY = relativeY * this.canvasHeight
         
@@ -198,11 +201,15 @@ export class CollaborativeCanvas {
     }
     
     resizeCanvas() {
-        // Check if we're on mobile and update canvas dimensions if needed
-        const wasMobile = this.isMobile
+        // Only run this once during initial setup, or if there's a mobile orientation change
+        if (this.initialSizingComplete) {
+            return
+        }
+        
+        // Detect mobile vs desktop
         this.isMobile = window.innerWidth <= 768
         
-        // Use canvas-wrapper as the container for measuring available space
+        // Get canvas wrapper size
         const container = document.querySelector('.canvas-wrapper')
         if (!container) {
             console.error('Canvas wrapper not found')
@@ -223,91 +230,51 @@ export class CollaborativeCanvas {
         const availableWidth = rect.width - (margin * 2)
         const availableHeight = rect.height - (margin * 2)
         
-        if (this.isMobile) {
-            // Mobile: Set canvas dimensions to fit within margins
-            this.canvasWidth = Math.max(availableWidth, 320)
-            this.canvasHeight = Math.max(availableHeight, 240)
-            this.displayWidth = this.canvasWidth
-            this.displayHeight = this.canvasHeight
-        } else {
-            // Desktop: Use fixed canvas size but scale display to fit within margins
-            this.canvasWidth = 1536
-            this.canvasHeight = 1080
-            
-            // Scale down to fit within available space if needed
-            const scaleX = availableWidth / this.canvasWidth
-            const scaleY = availableHeight / this.canvasHeight
-            const scale = Math.min(scaleX, scaleY, 1) // Don't scale up, only down if needed
-            
-            this.displayWidth = this.canvasWidth * scale
-            this.displayHeight = this.canvasHeight * scale
-        }
+        // Set canvas dimensions once based on wrapper size, then keep them static
+        this.canvasWidth = Math.max(availableWidth, 320)
+        this.canvasHeight = Math.max(availableHeight, 240)
         
-        // Set canvas to logical size
+        // Set canvas buffer size - this will NEVER change after this point
         this.canvas.width = this.canvasWidth
         this.canvas.height = this.canvasHeight
         
-        // Set display size
-        this.canvas.style.width = this.displayWidth + 'px'
-        this.canvas.style.height = this.displayHeight + 'px'
+        // Set initial display size - zoom will modify this via CSS
+        this.canvas.style.width = this.canvasWidth + 'px'
+        this.canvas.style.height = this.canvasHeight + 'px'
         
-        // Handle high DPI displays for crisp rendering
-        const pixelRatio = window.devicePixelRatio || 1
-        if (pixelRatio > 1) {
-            // Scale the actual canvas buffer for crisp rendering
-            this.canvas.width = this.canvasWidth * pixelRatio
-            this.canvas.height = this.canvasHeight * pixelRatio
-            this.ctx.scale(pixelRatio, pixelRatio)
-            
-            // Redraw white background after scaling
-            this.ctx.fillStyle = 'white'
-            this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
-        }
-        
-        // Update cursors layer to match canvas display size and position
-        const cursorsLayer = document.getElementById('cursors-layer')
-        if (cursorsLayer) {
-            cursorsLayer.style.width = this.displayWidth + 'px'
-            cursorsLayer.style.height = this.displayHeight + 'px'
-        }
-        
-        // Calculate the base zoom level that fits the canvas fully in view
-        // Use the available space (with margins) for zoom calculation
-        const scaleX = availableWidth / this.canvasWidth
-        const scaleY = availableHeight / this.canvasHeight
-        this.baseZoom = Math.min(scaleX, scaleY) // Use the limiting dimension
-        
-        // Ensure base zoom is reasonable (not too small)
-        this.baseZoom = Math.max(this.baseZoom, 0.1)
-        
-        // Set initial zoom to base zoom (100%)
-        this.zoomLevel = this.baseZoom
-        
-        // Reset pan to center
-        this.panX = 0
-        this.panY = 0
-        
-        // Apply current zoom and pan
-        this.updateCanvasTransform()
-        
-        // Update zoom display
-        this.updateZoomDisplay()
-        
-        // Configure context for smooth lines
+        // Configure context
         this.ctx.lineCap = 'round'
         this.ctx.lineJoin = 'round'
         this.ctx.imageSmoothingEnabled = true
         this.ctx.imageSmoothingQuality = 'high'
-        this.ctx.lineJoin = 'round'
-        this.ctx.imageSmoothingEnabled = true
-        this.ctx.imageSmoothingQuality = 'high'
         
-        // Set white background
+        // Fill with white background
         this.ctx.fillStyle = 'white'
         this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
         
-        // Mark initial sizing as complete
+        // Set base zoom to 1.0 (canvas at actual size = 100%)
+        this.baseZoom = 1.0
+        
+        // Calculate initial zoom to fit canvas in viewport if needed
+        const scaleX = availableWidth / this.canvasWidth
+        const scaleY = availableHeight / this.canvasHeight
+        const fitZoom = Math.min(scaleX, scaleY, 1)
+        
+        // Start at fit zoom (so canvas fits in view on load)
+        this.zoomLevel = fitZoom
+        
+        // Reset pan
+        this.panX = 0
+        this.panY = 0
+        
+        // Apply transform
+        this.updateCanvasTransform()
+        this.updateZoomDisplay()
+        
+        // Mark sizing as complete - no more resizing!
         this.initialSizingComplete = true
+        
+        console.log(`Canvas set to static size: ${this.canvasWidth}x${this.canvasHeight}, initial zoom: ${Math.round(fitZoom * 100)}%`)
     }
     
     setupUI() {
