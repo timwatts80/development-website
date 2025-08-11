@@ -23,13 +23,15 @@ try {
   execSync('cp -r dist/* ../public/tetris/', { stdio: 'inherit' });
   process.chdir('..');
   
-  // Build Collaborative Canvas
+  // Build Collaborative Canvas (builds directly to public/collaborative-canvas)
   console.log('🎨 Building Collaborative Canvas app...');
   process.chdir('collaborative-canvas');
   execSync('npm install', { stdio: 'inherit' });
   execSync('npm run build', { stdio: 'inherit' });
-  execSync('cp -r dist/* ../public/ink-pen/', { stdio: 'inherit' });
+  // The app builds directly to ../public/collaborative-canvas/
+  // Copy to ink-pen directory for the /ink-pen route
   process.chdir('..');
+  execSync('cp -r public/collaborative-canvas/* public/ink-pen/', { stdio: 'inherit' });
   
   // Build Daily Tracking
   console.log('📊 Building Daily Tracking app...');
