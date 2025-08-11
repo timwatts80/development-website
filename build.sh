@@ -19,7 +19,7 @@ fi
 
 cd tetris
 echo "Installing Tetris dependencies..."
-npm ci --only=production false
+npm install
 echo "Building Tetris..."
 npm run build
 
@@ -42,7 +42,7 @@ fi
 
 cd collaborative-canvas
 echo "Installing Collaborative Canvas dependencies..."
-npm ci --only=production false
+npm install
 echo "Building Collaborative Canvas..."
 npm run build
 
@@ -65,7 +65,7 @@ fi
 
 cd daily-tracking
 echo "Installing Daily Tracker dependencies..."
-npm ci --only=production false
+npm install
 echo "Building Daily Tracker..."
 npm run build
 

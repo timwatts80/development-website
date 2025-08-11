@@ -7,8 +7,7 @@
       "NODE_VERSION": "22.11.0"
     }
   },
-  "installCommand": "echo 'Dependencies installed by build script'",
-  "buildCommand": "chmod +x build.sh && ./build.sh",
+  "buildCommand": "npm run build",
   "outputDirectory": "public",
   "routes": [
     {
