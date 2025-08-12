@@ -55,7 +55,15 @@ export default function DailyTracker() {
         if (savedGroups) {
           try {
             const parsedGroups = JSON.parse(savedGroups)
-            const groupsWithDates = parsedGroups.map((group: any) => ({
+            const groupsWithDates = parsedGroups.map((group: {
+              id: string;
+              name: string;
+              color: string;
+              duration: number;
+              startDate: string;
+              createdAt: string;
+              tasks: Task[];
+            }) => ({
               ...group,
               startDate: new Date(group.startDate),
               createdAt: new Date(group.createdAt)
@@ -79,6 +87,7 @@ export default function DailyTracker() {
     }
 
     loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [migrationCompleted])
 
   // Load completions when date changes

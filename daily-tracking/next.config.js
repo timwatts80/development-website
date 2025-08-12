@@ -1,18 +1,16 @@
 /** @type {import('next').NextConfig} */
 const isDev = process.env.NODE_ENV !== 'production'
 
-// In development, don't use export mode to enable API routes
-// In production/export, use static export for hosting
+// Since we're using API routes and database, we can't use static export
+// Use regular Next.js build for both development and production
 const nextConfig = {
-  // Only use export mode in production builds, not in development
-  ...(isDev ? {} : { output: 'export' }),
   trailingSlash: true,
-  ...(isDev
-    ? {}
-    : {
-        basePath: '/daily-tracking',
-        assetPrefix: '/daily-tracking',
-      }),
+  // Only use basePath and assetPrefix for static hosting scenarios
+  // For now, disable them since we're using server functionality
+  ...(false ? {
+    basePath: '/daily-tracking',
+    assetPrefix: '/daily-tracking',
+  } : {}),
   images: {
     unoptimized: true,
   },

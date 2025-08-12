@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       const insertedTasks = await db
         .insert(tasks)
         .values(
-          taskList.map((task: any) => ({
+          taskList.map((task: { text: string; type: string; completed?: boolean }) => ({
             groupId: newGroup.id,
             text: task.text,
             type: task.type,
@@ -106,7 +106,7 @@ export async function PUT(request: NextRequest) {
       const insertedTasks = await db
         .insert(tasks)
         .values(
-          taskList.map((task: any) => ({
+          taskList.map((task: { text: string; type: string; completed?: boolean }) => ({
             groupId: id,
             text: task.text,
             type: task.type,

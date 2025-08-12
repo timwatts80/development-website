@@ -35,7 +35,15 @@ export class DatabaseService {
     const groups = await response.json()
     
     // Convert date strings back to Date objects
-    return groups.map((group: any) => ({
+    return groups.map((group: {
+      id: string;
+      name: string;
+      color: string;
+      duration: number;
+      startDate: string;
+      createdAt: string;
+      tasks: Task[];
+    }) => ({
       ...group,
       startDate: new Date(group.startDate),
       createdAt: new Date(group.createdAt)
@@ -102,7 +110,13 @@ export class DatabaseService {
     }
     
     const completions = await response.json()
-    return completions.map((completion: any) => ({
+    return completions.map((completion: {
+      id: string;
+      taskId: string;
+      completedDate: string;
+      completed: boolean;
+      createdAt: string;
+    }) => ({
       ...completion,
       completedDate: new Date(completion.completedDate),
       createdAt: new Date(completion.createdAt)
