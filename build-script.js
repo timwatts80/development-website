@@ -33,13 +33,9 @@ try {
   process.chdir('..');
   execSync('cp -r public/collaborative-canvas/* public/ink-pen/', { stdio: 'inherit' });
   
-  // Build Daily Tracking (static export for showcase)
-  console.log('📊 Building Daily Tracking app...');
-  process.chdir('daily-tracking');
-  execSync('npm install', { stdio: 'inherit' });
-  execSync('node build-static.js', { stdio: 'inherit' });
-  execSync('cp -r out/* ../public/daily-tracking/', { stdio: 'inherit' });
-  process.chdir('..');
+  // Build Daily Tracking is now a separate Vercel deployment
+  // The daily-tracking app should be deployed separately as a server-side Next.js app
+  console.log('📊 Skipping Daily Tracker - deployed separately with database functionality');
   
   console.log('✅ Build completed successfully!');
   
