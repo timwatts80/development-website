@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const isDev = process.env.NODE_ENV !== 'production'
 
-// In development, serve at root (no basePath) to avoid 404 at '/'.
-// In production/export, use '/daily-tracking' for hosting under subpath.
+// In development, don't use export mode to enable API routes
+// In production/export, use static export for hosting
 const nextConfig = {
-  output: 'export',
+  // Only use export mode in production builds, not in development
+  ...(isDev ? {} : { output: 'export' }),
   trailingSlash: true,
   ...(isDev
     ? {}

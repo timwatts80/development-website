@@ -1,50 +1,105 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { CheckCircle, Circle, Target, Calendar, TrendingUp, Users, Edit2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import TaskGroupDialog from '@/components/TaskGroupDialog'
 import CalendarDialog from '@/components/CalendarDialog'
-
-interface Task {
-  id: string
-  text: string
-  completed: boolean
-  type: 'habit' | 'task'
-}
-
-interface TaskGroup {
-  id: string
-  name: string
-  color: string
-  duration: number
-  startDate: Date
-  tasks: Task[]
-  createdAt: Date
-}
+import { DatabaseService, TaskGroup, Task } from '@/services/database'
 
 export default function DailyTracker() {
-  // Add sample task groups for testing
-  const [taskGroups, setTaskGroups] = useState<TaskGroup[]>([
-    {
-      id: 'sample-1',
-      name: 'Morning Routine',
-      color: '#3B82F6',
-      duration: 30,
-      startDate: new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000), // Started 2 days ago
-      tasks: [
-        { id: 'task-1', text: 'Morning meditation', completed: false, type: 'habit' },
-        { id: 'task-2', text: 'Drink glass of water', completed: false, type: 'habit' },
-        { id: 'task-3', text: 'Read for 20 minutes', completed: false, type: 'task' }
-      ],
-      createdAt: new Date()
-    }
-  ])
+  const [taskGroups, setTaskGroups] = useState<TaskGroup[]>([])
   const [isTaskGroupDialogOpen, setIsTaskGroupDialogOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState<TaskGroup | null>(null)
   const [taskCompletionState, setTaskCompletionState] = useState<{[key: string]: boolean}>({})
   const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [isLoading, setIsLoading] = useState(true)
+  const [migrationCompleted, setMigrationCompleted] = useState(false)
+
+  // Load data from database on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true)
+        
+        // Check if we need to migrate from localStorage
+        const hasLocalData = localStorage.getItem('dailyTracker_taskGroups')
+        if (hasLocalData && !migrationCompleted) {
+          console.log('Migrating data from localStorage to database...')
+          await DatabaseService.migrateFromLocalStorage()
+          setMigrationCompleted(true)
+          // Clear localStorage after successful migration
+          localStorage.removeItem('dailyTracker_taskGroups')
+          localStorage.removeItem('dailyTracker_completionState')
+        }
+        
+        // Load task groups from database
+        const groups = await DatabaseService.getTaskGroups()
+        setTaskGroups(groups)
+        
+        // Load task completions for today
+        const completions = await DatabaseService.getTaskCompletions(selectedDate)
+        const completionMap: {[key: string]: boolean} = {}
+        completions.forEach(completion => {
+          completionMap[completion.taskId] = completion.completed
+        })
+        setTaskCompletionState(completionMap)
+        
+      } catch (error) {
+        console.error('Failed to load data:', error)
+        // Fallback to localStorage if database fails
+        const savedGroups = localStorage.getItem('dailyTracker_taskGroups')
+        const savedCompletionState = localStorage.getItem('dailyTracker_completionState')
+        
+        if (savedGroups) {
+          try {
+            const parsedGroups = JSON.parse(savedGroups)
+            const groupsWithDates = parsedGroups.map((group: any) => ({
+              ...group,
+              startDate: new Date(group.startDate),
+              createdAt: new Date(group.createdAt)
+            }))
+            setTaskGroups(groupsWithDates)
+          } catch (error) {
+            console.error('Failed to parse saved task groups:', error)
+          }
+        }
+        
+        if (savedCompletionState) {
+          try {
+            setTaskCompletionState(JSON.parse(savedCompletionState))
+          } catch (error) {
+            console.error('Failed to parse saved completion state:', error)
+          }
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [migrationCompleted])
+
+  // Load completions when date changes
+  useEffect(() => {
+    const loadCompletions = async () => {
+      try {
+        const completions = await DatabaseService.getTaskCompletions(selectedDate)
+        const completionMap: {[key: string]: boolean} = {}
+        completions.forEach(completion => {
+          completionMap[completion.taskId] = completion.completed
+        })
+        setTaskCompletionState(completionMap)
+      } catch (error) {
+        console.error('Failed to load completions:', error)
+      }
+    }
+
+    if (!isLoading) {
+      loadCompletions()
+    }
+  }, [selectedDate, isLoading])
 
   // Get selected date formatted
   const getSelectedDateFormatted = () => {
@@ -87,42 +142,76 @@ export default function DailyTracker() {
     return getTasksForDate(selectedDate)
   }
 
-  const toggleTask = (id: string) => {
+  const toggleTask = async (id: string) => {
+    const newState = !taskCompletionState[id]
+    
+    // Update local state immediately for responsiveness
     setTaskCompletionState(prev => ({
       ...prev,
-      [id]: !prev[id]
+      [id]: newState
     }))
+    
+    // Update database
+    try {
+      await DatabaseService.updateTaskCompletion(id, newState, selectedDate)
+    } catch (error) {
+      console.error('Failed to update task completion:', error)
+      // Revert local state on error
+      setTaskCompletionState(prev => ({
+        ...prev,
+        [id]: !newState
+      }))
+    }
   }
 
-  const handleCreateTaskGroup = (groupData: {
+  const handleCreateTaskGroup = async (groupData: {
     name: string
     color: string
     duration: number
     startDate: Date
     tasks: Task[]
   }) => {
-    if (editingGroup) {
-      // Update existing group
-      setTaskGroups(prev => prev.map(group => 
-        group.id === editingGroup.id 
-          ? { ...group, ...groupData }
-          : group
-      ))
-      setEditingGroup(null)
-    } else {
-      // Create new group
-      const newGroup: TaskGroup = {
-        id: Date.now().toString(),
-        name: groupData.name,
-        color: groupData.color,
-        duration: groupData.duration,
-        startDate: groupData.startDate,
-        tasks: groupData.tasks,
-        createdAt: new Date()
+    try {
+      if (editingGroup) {
+        // Update existing group
+        const updatedGroup = await DatabaseService.updateTaskGroup({
+          ...editingGroup,
+          ...groupData
+        })
+        setTaskGroups(prev => prev.map(group => 
+          group.id === editingGroup.id ? updatedGroup : group
+        ))
+        setEditingGroup(null)
+      } else {
+        // Create new group
+        const newGroup = await DatabaseService.createTaskGroup(groupData)
+        setTaskGroups(prev => [...prev, newGroup])
       }
-      setTaskGroups(prev => [...prev, newGroup])
+      setIsTaskGroupDialogOpen(false)
+    } catch (error) {
+      console.error('Failed to save task group:', error)
+      // Fallback to localStorage for offline support
+      if (editingGroup) {
+        setTaskGroups(prev => prev.map(group => 
+          group.id === editingGroup.id 
+            ? { ...group, ...groupData }
+            : group
+        ))
+        setEditingGroup(null)
+      } else {
+        const newGroup: TaskGroup = {
+          id: Date.now().toString(),
+          name: groupData.name,
+          color: groupData.color,
+          duration: groupData.duration,
+          startDate: groupData.startDate,
+          tasks: groupData.tasks,
+          createdAt: new Date()
+        }
+        setTaskGroups(prev => [...prev, newGroup])
+      }
+      setIsTaskGroupDialogOpen(false)
     }
-    setIsTaskGroupDialogOpen(false)
   }
 
   const handleEditTaskGroup = (group: TaskGroup) => {
@@ -130,8 +219,15 @@ export default function DailyTracker() {
     setIsTaskGroupDialogOpen(true)
   }
 
-  const handleDeleteTaskGroup = (groupId: string) => {
-    setTaskGroups(prev => prev.filter(group => group.id !== groupId))
+  const handleDeleteTaskGroup = async (groupId: string) => {
+    try {
+      await DatabaseService.deleteTaskGroup(groupId)
+      setTaskGroups(prev => prev.filter(group => group.id !== groupId))
+    } catch (error) {
+      console.error('Failed to delete task group:', error)
+      // Fallback to local state update
+      setTaskGroups(prev => prev.filter(group => group.id !== groupId))
+    }
   }
 
   const handleCloseDialog = () => {
@@ -161,28 +257,23 @@ export default function DailyTracker() {
     }
   }
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading your tasks...</p>
+        </div>
+      </div>
+    )
+  }
+
   // Get today's tasks from active task groups
   const todaysTasks = getTodaysTasks()
   const completedTasks = todaysTasks.filter(task => taskCompletionState[task.id] || false).length
   const totalTasks = todaysTasks.length
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
-
-  // Get all unique tasks from task groups for the dialog
-  const getAllUniqueTasks = () => {
-    const allTasks: Task[] = []
-    const taskIds = new Set<string>()
-    
-    taskGroups.forEach(group => {
-      group.tasks.forEach(task => {
-        if (!taskIds.has(task.id)) {
-          taskIds.add(task.id)
-          allTasks.push(task)
-        }
-      })
-    })
-    
-    return allTasks
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -371,11 +462,7 @@ export default function DailyTracker() {
         <TaskGroupDialog
           isOpen={isTaskGroupDialogOpen}
           onClose={handleCloseDialog}
-          onSave={editingGroup ? 
-            (groupData) => handleEditTaskGroup({...groupData, id: editingGroup.id, createdAt: editingGroup.createdAt}) :
-            handleCreateTaskGroup
-          }
-          existingTasks={getAllUniqueTasks()}
+          onSave={handleCreateTaskGroup}
           editingGroup={editingGroup}
         />
 

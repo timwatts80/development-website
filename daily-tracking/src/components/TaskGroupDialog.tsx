@@ -25,7 +25,6 @@ interface TaskGroupDialogProps {
   isOpen: boolean
   onClose: () => void
   onSave: (taskGroup: Omit<TaskGroup, 'id' | 'createdAt'>) => void
-  existingTasks?: Task[]
   editingGroup?: TaskGroup | null
 }
 
@@ -40,12 +39,11 @@ const colorOptions = [
   { name: 'Teal', value: '#14B8A6' }
 ]
 
-export default function TaskGroupDialog({ isOpen, onClose, onSave, existingTasks = [], editingGroup }: TaskGroupDialogProps) {
+export default function TaskGroupDialog({ isOpen, onClose, onSave, editingGroup }: TaskGroupDialogProps) {
   const [groupName, setGroupName] = useState('')
   const [selectedColor, setSelectedColor] = useState(colorOptions[0].value)
   const [duration, setDuration] = useState(7)
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]) // Today's date in YYYY-MM-DD format
-  const [selectedTasks, setSelectedTasks] = useState<string[]>([])
   const [newTasks, setNewTasks] = useState<string[]>([''])
   const [newTaskTypes, setNewTaskTypes] = useState<('task' | 'habit')[]>(['task'])
   const dialogContentRef = React.useRef<HTMLDivElement>(null)
@@ -58,48 +56,39 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, existingTasks
       setDuration(editingGroup.duration)
       setStartDate(editingGroup.startDate.toISOString().split('T')[0])
       
-      // Set selected existing tasks
-      const existingTaskIds = editingGroup.tasks
-        .filter(task => existingTasks.some(et => et.id === task.id))
-        .map(task => task.id)
-      setSelectedTasks(existingTaskIds)
-      
-      // Set new tasks (tasks not in existing tasks)
-      const newTaskTexts = editingGroup.tasks
-        .filter(task => !existingTasks.some(et => et.id === task.id))
-        .map(task => task.text)
-      const newTaskTypesArray = editingGroup.tasks
-        .filter(task => !existingTasks.some(et => et.id === task.id))
-        .map(task => task.type)
-      setNewTasks(newTaskTexts.length > 0 ? newTaskTexts : [''])
-      setNewTaskTypes(newTaskTypesArray.length > 0 ? newTaskTypesArray : ['task'])
+      // For editing, show all existing tasks as new task fields
+      if (editingGroup.tasks.length > 0) {
+        setNewTasks(editingGroup.tasks.map(task => task.text))
+        setNewTaskTypes(editingGroup.tasks.map(task => task.type))
+      } else {
+        setNewTasks([''])
+        setNewTaskTypes(['task'])
+      }
     } else {
       // Reset form for new group
       setGroupName('')
       setSelectedColor(colorOptions[0].value)
       setDuration(7)
       setStartDate(new Date().toISOString().split('T')[0])
-      setSelectedTasks([])
       setNewTasks([''])
       setNewTaskTypes(['task'])
     }
-  }, [editingGroup, existingTasks])
+  }, [editingGroup])
 
   const handleSave = () => {
     if (!groupName.trim()) return
 
-    const existingSelectedTasks = existingTasks.filter(task => selectedTasks.includes(task.id))
-    
-    const newTaskObjects = newTasks
+    // Create all tasks from the new task fields
+    const allTasks = newTasks
       .filter(taskText => taskText.trim())
       .map((taskText, index) => ({
-        id: `${Date.now()}-${index}`,
+        id: editingGroup ? 
+          (editingGroup.tasks[index]?.id || `${Date.now()}-${index}`) : // Preserve existing task IDs when editing
+          `${Date.now()}-${index}`, // Generate new IDs for new group
         text: taskText.trim(),
-        completed: false,
+        completed: editingGroup ? (editingGroup.tasks[index]?.completed || false) : false, // Preserve completion state
         type: newTaskTypes[index] || 'task'
       }))
-
-    const allTasks = [...existingSelectedTasks, ...newTaskObjects]
 
     onSave({
       name: groupName,
@@ -113,18 +102,9 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, existingTasks
     setGroupName('')
     setSelectedColor(colorOptions[0].value)
     setDuration(7)
-    setSelectedTasks([])
     setNewTasks([''])
     setNewTaskTypes(['task'])
     onClose()
-  }
-
-  const toggleTaskSelection = (taskId: string) => {
-    setSelectedTasks(prev => 
-      prev.includes(taskId)
-        ? prev.filter(id => id !== taskId)
-        : [...prev, taskId]
-    )
   }
 
   const addNewTaskField = () => {
@@ -188,7 +168,7 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, existingTasks
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="e.g., Morning Routine, Weekly Goals..."
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
 
@@ -228,7 +208,7 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, existingTasks
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
 
@@ -241,7 +221,7 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, existingTasks
                 <button
                   type="button"
                   onClick={() => setDuration(Math.max(1, duration - 1))}
-                  className="p-1 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="p-1 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
@@ -250,12 +230,12 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, existingTasks
                   value={duration}
                   onChange={handleDurationChange}
                   min="1"
-                  className="w-20 px-3 py-2 text-center border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-20 px-3 py-2 text-center border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 bg-white text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <button
                   type="button"
                   onClick={() => setDuration(duration + 1)}
-                  className="p-1 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="p-1 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -263,58 +243,17 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, existingTasks
             </div>
           </div>
 
-          {/* Task Selection */}
+          {/* Task Section */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Add Tasks to Group
+              Tasks
             </label>
             
-            {/* Existing Tasks */}
-            {existingTasks.length > 0 && (
-              <div className="mb-3">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Select from common tasks:</p>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {existingTasks.map((task) => (
-                    <label
-                      key={task.id}
-                      className="flex items-center space-x-3 cursor-pointer p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          checked={selectedTasks.includes(task.id)}
-                          onChange={() => toggleTaskSelection(task.id)}
-                          className="sr-only"
-                        />
-                        <div className={`w-5 h-5 rounded border-2 transition-colors flex items-center justify-center ${
-                          selectedTasks.includes(task.id)
-                            ? 'bg-blue-600 border-blue-600 dark:bg-blue-500 dark:border-blue-500'
-                            : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
-                        }`}>
-                          {selectedTasks.includes(task.id) && (
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
-                      </div>
-                      <span className="text-sm text-gray-900 dark:text-gray-100 flex-1">{task.text}</span>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        task.type === 'habit' 
-                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' 
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                      }`}>
-                        {task.type}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* New Tasks */}
+            {/* Tasks */}
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Add new tasks:</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                {editingGroup ? 'Edit tasks in this group:' : 'Add tasks to this group:'}
+              </p>
               <div className="space-y-2">
                 {newTasks.map((task, index) => (
                   <div key={index} className="flex items-center space-x-2">
@@ -323,7 +262,7 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, existingTasks
                       value={task}
                       onChange={(e) => updateNewTask(index, e.target.value)}
                       placeholder={`Task ${index + 1}...`}
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                     />
                     <div className="flex items-center space-x-1">
                       <button
