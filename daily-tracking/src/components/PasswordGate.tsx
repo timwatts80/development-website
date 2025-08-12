@@ -93,10 +93,6 @@ export default function PasswordGate({ children }: PasswordGateProps) {
               </Button>
             </form>
           </div>
-          
-          <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-            <p>Demo password: <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded">daily123</code></p>
-          </div>
         </div>
       </div>
     )

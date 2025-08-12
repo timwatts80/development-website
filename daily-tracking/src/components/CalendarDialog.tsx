@@ -1,8 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Task {
   id: string
@@ -170,7 +169,7 @@ export default function CalendarDialog({ isOpen, onClose, taskGroups, onDateSele
                     <span>{date.getDate()}</span>
                     {hasActiveGroups && (
                       <div className="flex space-x-1 mt-1">
-                        {activeGroups.slice(0, 3).map((group, groupIndex) => (
+                        {activeGroups.slice(0, 3).map((group) => (
                           <div
                             key={group.id}
                             className="w-1.5 h-1.5 rounded-full"

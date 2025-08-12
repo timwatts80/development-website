@@ -46,19 +46,6 @@ export default function DailyTracker() {
   const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
 
-  // Get today's date with proper timezone handling
-  const getTodaysDate = () => {
-    const now = new Date()
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    }
-    return now.toLocaleDateString('en-US', options)
-  }
-
   // Get selected date formatted
   const getSelectedDateFormatted = () => {
     const options: Intl.DateTimeFormatOptions = {
@@ -329,7 +316,7 @@ export default function DailyTracker() {
                 </button>
               </div>
               {taskGroups.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No groups yet. Click "New" above to create your first group.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No groups yet. Click &ldquo;New&rdquo; above to create your first group.</p>
               ) : (
                 <div className="space-y-4">
                   {taskGroups.map((group) => (
