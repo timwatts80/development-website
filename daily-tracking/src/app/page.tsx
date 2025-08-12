@@ -15,6 +15,7 @@ export default function DailyTracker() {
   const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingCompletions, setIsLoadingCompletions] = useState(true)
   const [migrationCompleted, setMigrationCompleted] = useState(false)
 
   // Load data from database on component mount
@@ -22,6 +23,7 @@ export default function DailyTracker() {
     const loadData = async () => {
       try {
         setIsLoading(true)
+        setIsLoadingCompletions(true)
         
         // Check if we need to migrate from localStorage
         const hasLocalData = localStorage.getItem('dailyTracker_taskGroups')
@@ -45,6 +47,7 @@ export default function DailyTracker() {
           completionMap[completion.taskId] = completion.completed
         })
         setTaskCompletionState(completionMap)
+        setIsLoadingCompletions(false)
         
       } catch (error) {
         console.error('Failed to load data:', error)
@@ -81,6 +84,7 @@ export default function DailyTracker() {
             console.error('Failed to parse saved completion state:', error)
           }
         }
+        setIsLoadingCompletions(false)
       } finally {
         setIsLoading(false)
       }
@@ -94,6 +98,7 @@ export default function DailyTracker() {
   useEffect(() => {
     const loadCompletions = async () => {
       try {
+        setIsLoadingCompletions(true)
         const completions = await DatabaseService.getTaskCompletions(selectedDate)
         const completionMap: {[key: string]: boolean} = {}
         completions.forEach(completion => {
@@ -102,13 +107,16 @@ export default function DailyTracker() {
         setTaskCompletionState(completionMap)
       } catch (error) {
         console.error('Failed to load completions:', error)
+      } finally {
+        setIsLoadingCompletions(false)
       }
     }
 
-    if (!isLoading) {
+    // Only load if we have task groups and this is not the initial load
+    if (taskGroups.length > 0 && !isLoading) {
       loadCompletions()
     }
-  }, [selectedDate, isLoading])
+  }, [selectedDate, taskGroups.length, isLoading])
 
   // Get selected date formatted
   const getSelectedDateFormatted = () => {
@@ -266,8 +274,8 @@ export default function DailyTracker() {
     }
   }
 
-  // Show loading state
-  if (isLoading) {
+  // Show loading state - wait for both task groups and completions to load
+  if (isLoading || isLoadingCompletions) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
