@@ -3,10 +3,10 @@ import { db } from '@/db'
 import { taskGroups, tasks } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
-// Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+
   try {
     const groups = await db
       .select()

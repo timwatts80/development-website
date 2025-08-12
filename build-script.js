@@ -33,11 +33,11 @@ try {
   process.chdir('..');
   execSync('cp -r public/collaborative-canvas/* public/ink-pen/', { stdio: 'inherit' });
   
-  // Build Daily Tracking
+  // Build Daily Tracking (static export for showcase)
   console.log('📊 Building Daily Tracking app...');
   process.chdir('daily-tracking');
   execSync('npm install', { stdio: 'inherit' });
-  execSync('npm run build', { stdio: 'inherit' });
+  execSync('node build-static.js', { stdio: 'inherit' });
   execSync('cp -r out/* ../public/daily-tracking/', { stdio: 'inherit' });
   process.chdir('..');
   

@@ -3,10 +3,10 @@ import { db } from '@/db'
 import { taskCompletions } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
-// Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+
   try {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date')
