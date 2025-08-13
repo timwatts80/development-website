@@ -10,7 +10,11 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test:race-condition": "node test-race-condition.js",
+    "test:manual-guide": "node manual-test-guide.js",
+    "test:api-timing": "node test-api-timing.js",
+    "test:all": "npm run test:api-timing && npm run test:manual-guide"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
@@ -37,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "postcss": "^8.5.6",
+    "puppeteer": "^24.16.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
   }
