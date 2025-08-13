@@ -112,11 +112,11 @@ export default function DailyTracker() {
       }
     }
 
-    // Only load if we have task groups and this is not the initial load
-    if (taskGroups.length > 0 && !isLoading) {
+    // Load whenever we have task groups
+    if (taskGroups.length > 0) {
       loadCompletions()
     }
-  }, [selectedDate, taskGroups.length, isLoading])
+  }, [selectedDate, taskGroups.length])
 
   // Get selected date formatted
   const getSelectedDateFormatted = () => {
