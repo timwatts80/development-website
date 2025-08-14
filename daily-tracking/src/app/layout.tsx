@@ -7,9 +7,9 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 const inter = Inter({
   subsets: ["latin"],
-  display: "swap", // Improve font loading performance
-  preload: true,
-  fallback: ['system-ui', 'arial'], // Better fallback fonts
+  display: "swap",
+  preload: false, // Disable preload to prevent unused preload warnings
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
 });
 
 export const metadata: Metadata = {

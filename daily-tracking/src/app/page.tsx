@@ -47,6 +47,14 @@ export default function DailyTracker() {
   // Load data from database on component mount
   useEffect(() => {
     const loadData = async () => {
+      console.log('🔄 Starting data load...', {
+        selectedDate: selectedDate.toISOString(),
+        migrationCompleted,
+        isLoading,
+        isLoadingCompletions,
+        dataFullyLoaded
+      })
+      
       const timeoutController = new AbortController()
       const timeoutId = setTimeout(() => timeoutController.abort(), 10000) // 10 second timeout
       
@@ -55,10 +63,12 @@ export default function DailyTracker() {
         setIsLoadingCompletions(true)
         setDataFullyLoaded(false)
         
+        console.log('📊 Loading states set to true')
+        
         // Check if we need to migrate from localStorage
         const hasLocalData = localStorage.getItem('dailyTracker_taskGroups')
         if (hasLocalData && !migrationCompleted) {
-          console.log('Migrating data from localStorage to database...')
+          console.log('🔄 Migrating data from localStorage to database...')
           await Promise.race([
             DatabaseService.migrateFromLocalStorage(),
             new Promise((_, reject) => 
@@ -71,46 +81,67 @@ export default function DailyTracker() {
           // Clear localStorage after successful migration
           localStorage.removeItem('dailyTracker_taskGroups')
           localStorage.removeItem('dailyTracker_completionState')
+          console.log('✅ Migration completed')
         }
+
+        console.log('🔄 Loading task groups and completions in parallel...')
         
-        // Load task groups from database with timeout protection
-        const groups = await Promise.race([
-          DatabaseService.getTaskGroups(),
-          new Promise((_, reject) => 
-            timeoutController.signal.addEventListener('abort', () => 
-              reject(new Error('Task groups loading timeout'))
+        // Load both task groups and completions in parallel, but wait for both
+        const [groups, completions] = await Promise.all([
+          Promise.race([
+            DatabaseService.getTaskGroups(),
+            new Promise((_, reject) => 
+              timeoutController.signal.addEventListener('abort', () => 
+                reject(new Error('Task groups loading timeout'))
+              )
             )
-          )
-        ]) as TaskGroup[]
+          ]) as Promise<TaskGroup[]>,
+          Promise.race([
+            fetch(`/api/task-completions/?date=${encodeURIComponent(selectedDate.toISOString())}`).then(res => res.json()),
+            new Promise<never>((_, reject) => 
+              timeoutController.signal.addEventListener('abort', () => 
+                reject(new Error('Task completions loading timeout'))
+              )
+            )
+          ]) as Promise<Array<{taskId: string, completed: boolean}>>
+        ])
+
+        console.log('📊 Data loaded:', {
+          groupsCount: groups.length,
+          completionsCount: completions.length,
+          completions: completions
+        })
+
+        // Process the data
         setTaskGroups(groups)
+        console.log('✅ Task groups set:', groups.length)
         
-        // Load task completions for today - always load, even if no groups
-        const completions = await Promise.race([
-          fetch(`/api/task-completions/?date=${encodeURIComponent(selectedDate.toISOString())}`).then(res => res.json()),
-          new Promise<never>((_, reject) => 
-            timeoutController.signal.addEventListener('abort', () => 
-              reject(new Error('Task completions loading timeout'))
-            )
-          )
-        ]) as Array<{taskId: string, completed: boolean}>
         const completionMap: {[key: string]: boolean} = {}
         completions.forEach(completion => {
           completionMap[completion.taskId] = completion.completed
         })
         setTaskCompletionState(completionMap)
-        setIsLoadingCompletions(false)
+        console.log('✅ Completion state set:', completionMap)
         
-        // Mark all data as fully loaded
+        // Only after both are processed, mark as fully loaded
+        setIsLoading(false)
+        setIsLoadingCompletions(false)
         setDataFullyLoaded(true)
+        console.log('🎉 All data fully loaded!')
         clearTimeout(timeoutId)
         
       } catch (error) {
-        console.error('Failed to load data:', error)
+        console.error('❌ Failed to load data:', error)
         clearTimeout(timeoutId) // Clean up timeout
         
         // Fallback to localStorage if database fails or times out
         const savedGroups = localStorage.getItem('dailyTracker_taskGroups')
         const savedCompletionState = localStorage.getItem('dailyTracker_completionState')
+        
+        console.log('🔄 Falling back to localStorage...', {
+          hasGroups: !!savedGroups,
+          hasCompletionState: !!savedCompletionState
+        })
         
         if (savedGroups) {
           try {
@@ -129,29 +160,69 @@ export default function DailyTracker() {
               createdAt: new Date(group.createdAt)
             }))
             setTaskGroups(groupsWithDates)
+            console.log('✅ Restored groups from localStorage:', groupsWithDates.length)
           } catch (error) {
-            console.error('Failed to parse saved task groups:', error)
+            console.error('❌ Failed to parse saved task groups:', error)
           }
         }
         
         if (savedCompletionState) {
           try {
-            setTaskCompletionState(JSON.parse(savedCompletionState))
+            const parsedState = JSON.parse(savedCompletionState)
+            setTaskCompletionState(parsedState)
+            console.log('✅ Restored completion state from localStorage:', parsedState)
           } catch (error) {
-            console.error('Failed to parse saved completion state:', error)
+            console.error('❌ Failed to parse saved completion state:', error)
           }
         }
-        setIsLoadingCompletions(false)
+        
         // Even on error, mark as loaded so UI doesn't hang
-        setDataFullyLoaded(true)
-      } finally {
         setIsLoading(false)
+        setIsLoadingCompletions(false)
+        setDataFullyLoaded(true)
+        console.log('⚠️ Data loading completed with errors, but UI unlocked')
+      } finally {
+        // Ensure loading states are always cleared
+        setIsLoading(false)
+        setIsLoadingCompletions(false)
       }
     }
 
     loadData()
+    // Only depend on migrationCompleted, not selectedDate
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [migrationCompleted])
+
+  // Separate effect for loading completions when date changes
+  useEffect(() => {
+    const loadCompletionsForDate = async () => {
+      // Skip if still loading initial data
+      if (isLoading || !dataFullyLoaded) {
+        console.log('⏳ Skipping completion reload - initial data still loading')
+        return
+      }
+      
+      console.log('📅 Date changed, reloading completions for:', selectedDate.toISOString())
+      setIsLoadingCompletions(true)
+      
+      try {
+        const completions = await fetch(`/api/task-completions/?date=${encodeURIComponent(selectedDate.toISOString())}`).then(res => res.json())
+        
+        const completionMap: {[key: string]: boolean} = {}
+        completions.forEach((completion: {taskId: string, completed: boolean}) => {
+          completionMap[completion.taskId] = completion.completed
+        })
+        setTaskCompletionState(completionMap)
+        console.log('📅 Completions updated for date change:', completionMap)
+      } catch (error) {
+        console.error('❌ Failed to load completions for date:', error)
+      } finally {
+        setIsLoadingCompletions(false)
+      }
+    }
+
+    loadCompletionsForDate()
+  }, [selectedDate, isLoading, dataFullyLoaded])
 
   // Load completions when date changes
   useEffect(() => {
@@ -338,14 +409,27 @@ export default function DailyTracker() {
     }
   }
 
-  // Show loading state - wait for both task groups and completions to load completely
-  if (isLoading || isLoadingCompletions || !dataFullyLoaded) {
-    const stage = isLoading ? 'task-groups' : 
-                  isLoadingCompletions ? 'completions' : 
+  // Show loading state - wait for ALL data to be fully loaded
+  if (!dataFullyLoaded || isLoading || isLoadingCompletions) {
+    const stage = !dataFullyLoaded && isLoading ? 'task-groups' : 
+                  !dataFullyLoaded && isLoadingCompletions ? 'completions' : 
                   'synchronizing'
+    
+    console.log('⏳ Showing loading spinner:', {
+      stage,
+      dataFullyLoaded,
+      isLoading,
+      isLoadingCompletions
+    })
     
     return <TaskLoadingSpinner stage={stage} />
   }
+
+  console.log('🎉 Rendering main UI:', {
+    taskGroupsCount: taskGroups.length,
+    completionStateKeys: Object.keys(taskCompletionState).length,
+    completionState: taskCompletionState
+  })
 
   // Get today's tasks from active task groups
   const todaysTasks = getTodaysTasks()
