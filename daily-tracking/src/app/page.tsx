@@ -86,13 +86,13 @@ export default function DailyTracker() {
         
         // Load task completions for today - always load, even if no groups
         const completions = await Promise.race([
-          DatabaseService.getTaskCompletions(selectedDate),
-          new Promise((_, reject) => 
+          fetch(`/api/task-completions/?date=${encodeURIComponent(selectedDate.toISOString())}`).then(res => res.json()),
+          new Promise<never>((_, reject) => 
             timeoutController.signal.addEventListener('abort', () => 
               reject(new Error('Task completions loading timeout'))
             )
           )
-        ]) as any[]
+        ]) as Array<{taskId: string, completed: boolean}>
         const completionMap: {[key: string]: boolean} = {}
         completions.forEach(completion => {
           completionMap[completion.taskId] = completion.completed
