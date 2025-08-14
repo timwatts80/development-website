@@ -14,7 +14,12 @@ export default function DailyTracker() {
   const [editingGroup, setEditingGroup] = useState<TaskGroup | null>(null)
   const [taskCompletionState, setTaskCompletionState] = useState<{[key: string]: boolean}>({})
   const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  // Initialize selectedDate to today at midnight for consistency
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return today
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingCompletions, setIsLoadingCompletions] = useState(true)
   const [migrationCompleted, setMigrationCompleted] = useState(false)
@@ -86,6 +91,14 @@ export default function DailyTracker() {
 
         console.log('🔄 Loading task groups and completions in parallel...')
         
+        // Normalize the selected date to midnight for consistent querying
+        const normalizedDate = new Date(selectedDate)
+        normalizedDate.setHours(0, 0, 0, 0)
+        console.log('📅 Query date normalized:', {
+          originalDate: selectedDate.toISOString(),
+          normalizedDate: normalizedDate.toISOString()
+        })
+        
         // Load both task groups and completions in parallel, but wait for both
         const [groups, completions] = await Promise.all([
           Promise.race([
@@ -97,7 +110,7 @@ export default function DailyTracker() {
             )
           ]) as Promise<TaskGroup[]>,
           Promise.race([
-            fetch(`/api/task-completions/?date=${encodeURIComponent(selectedDate.toISOString())}`).then(res => res.json()),
+            fetch(`/api/task-completions/?date=${encodeURIComponent(normalizedDate.toISOString())}`).then(res => res.json()),
             new Promise<never>((_, reject) => 
               timeoutController.signal.addEventListener('abort', () => 
                 reject(new Error('Task completions loading timeout'))
@@ -202,11 +215,18 @@ export default function DailyTracker() {
         return
       }
       
-      console.log('📅 Date changed, reloading completions for:', selectedDate.toISOString())
+      // Normalize the selected date to midnight for consistent querying
+      const normalizedDate = new Date(selectedDate)
+      normalizedDate.setHours(0, 0, 0, 0)
+      
+      console.log('📅 Date changed, reloading completions for:', {
+        originalDate: selectedDate.toISOString(),
+        normalizedDate: normalizedDate.toISOString()
+      })
       setIsLoadingCompletions(true)
       
       try {
-        const completions = await fetch(`/api/task-completions/?date=${encodeURIComponent(selectedDate.toISOString())}`).then(res => res.json())
+        const completions = await fetch(`/api/task-completions/?date=${encodeURIComponent(normalizedDate.toISOString())}`).then(res => res.json())
         
         const completionMap: {[key: string]: boolean} = {}
         completions.forEach((completion: {taskId: string, completed: boolean}) => {
@@ -303,9 +323,20 @@ export default function DailyTracker() {
       [id]: newState
     }))
     
+    // Normalize the selected date to midnight for consistent storage
+    const normalizedDate = new Date(selectedDate)
+    normalizedDate.setHours(0, 0, 0, 0)
+    
+    console.log('🔄 Toggling task:', {
+      taskId: id,
+      newState,
+      originalDate: selectedDate.toISOString(),
+      normalizedDate: normalizedDate.toISOString()
+    })
+    
     // Update database
     try {
-      await DatabaseService.updateTaskCompletion(id, newState, selectedDate)
+      await DatabaseService.updateTaskCompletion(id, newState, normalizedDate)
     } catch (error) {
       console.error('Failed to update task completion:', error)
       // Revert local state on error
@@ -388,7 +419,14 @@ export default function DailyTracker() {
   }
 
   const handleDateSelect = (date: Date) => {
-    setSelectedDate(date)
+    // Normalize selected date to midnight for consistency
+    const normalizedDate = new Date(date)
+    normalizedDate.setHours(0, 0, 0, 0)
+    console.log('📅 Date selected:', {
+      originalDate: date.toISOString(),
+      normalizedDate: normalizedDate.toISOString()
+    })
+    setSelectedDate(normalizedDate)
   }
 
   const getSelectedDateDisplay = () => {
