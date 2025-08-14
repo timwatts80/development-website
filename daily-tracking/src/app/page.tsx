@@ -672,6 +672,9 @@ export default function DailyTracker() {
           onClose={() => setIsCalendarDialogOpen(false)}
           taskGroups={taskGroups}
           onDateSelect={handleDateSelect}
+          taskCompletionState={taskCompletionState}
+          getTasksForDate={getTasksForDate}
+          selectedDate={selectedDate}
         />
       </div>
     </div>

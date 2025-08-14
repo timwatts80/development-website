@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import PasswordGate from "@/components/PasswordGate";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  preload: false, // Disable preload to prevent unused preload warnings
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+});
 
 export const metadata: Metadata = {
   title: "Daily Tracker",
@@ -16,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-sans">
+      <body className={inter.className}>
         <ErrorBoundary>
           <ThemeProvider>
             <PasswordGate>

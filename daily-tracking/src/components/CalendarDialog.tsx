@@ -25,9 +25,12 @@ interface CalendarDialogProps {
   onClose: () => void
   taskGroups: TaskGroup[]
   onDateSelect: (date: Date) => void
+  taskCompletionState: {[key: string]: boolean}
+  getTasksForDate: (date: Date) => Task[]
+  selectedDate: Date
 }
 
-export default function CalendarDialog({ isOpen, onClose, taskGroups, onDateSelect }: CalendarDialogProps) {
+export default function CalendarDialog({ isOpen, onClose, taskGroups, onDateSelect, taskCompletionState, getTasksForDate, selectedDate }: CalendarDialogProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
   const monthNames = [
@@ -70,6 +73,25 @@ export default function CalendarDialog({ isOpen, onClose, taskGroups, onDateSele
 
       return targetDate >= startDate && targetDate <= endDate
     })
+  }
+
+  // Check if all tasks for a given date are completed
+  const isDayComplete = (date: Date) => {
+    // Only check completion for the currently selected date
+    // since taskCompletionState only contains data for the selected date
+    const dateString = date.toISOString().split('T')[0]
+    const selectedDateString = selectedDate.toISOString().split('T')[0]
+    
+    if (dateString !== selectedDateString) {
+      return false // Not the selected date, so we don't have completion data
+    }
+    
+    const tasksForDate = getTasksForDate(date)
+    if (tasksForDate.length === 0) {
+      return false // No tasks means day is not complete
+    }
+    
+    return tasksForDate.every(task => taskCompletionState[task.id] || false)
   }
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -148,6 +170,7 @@ export default function CalendarDialog({ isOpen, onClose, taskGroups, onDateSele
             {calendarDays.map((date, index) => {
               const activeGroups = getActiveGroupsForDate(date)
               const hasActiveGroups = activeGroups.length > 0
+              const isComplete = isDayComplete(date)
               const todayClass = isToday(date)
               const currentMonthClass = isCurrentMonth(date)
 
@@ -162,6 +185,7 @@ export default function CalendarDialog({ isOpen, onClose, taskGroups, onDateSele
                       : 'text-gray-400 dark:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-750'
                     }
                     ${todayClass ? 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100' : ''}
+                    ${isComplete ? 'bg-green-100 text-green-900 dark:bg-green-900 dark:text-green-100' : ''}
                     ${hasActiveGroups ? 'font-semibold' : ''}
                   `}
                 >
