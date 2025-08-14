@@ -177,11 +177,6 @@ export default function CalendarDialog({
     return days
   }
 
-  // Get the first day of the month and calculate calendar grid
-  const getCalendarDays = () => {
-    return getCalendarDaysForMonth(currentMonth)
-  }
-
   // Check if a date has active task groups
   const getActiveGroupsForDate = (date: Date) => {
     const targetDate = normalizeToLocalMidnight(date)
@@ -246,21 +241,6 @@ export default function CalendarDialog({
     return true
   }
 
-  // Get the progressive day count for a date within its task group ranges
-  const getProgressiveDayCount = (date: Date) => {
-    const activeGroups = getActiveGroupsForDate(date)
-    if (activeGroups.length === 0) return null
-    
-    // For multiple groups, show the first group's day count
-    const primaryGroup = activeGroups[0]
-    const groupStartDate = normalizeToLocalMidnight(new Date(primaryGroup.startDate))
-    const currentDate = normalizeToLocalMidnight(date)
-    
-    // Calculate days since start of group (1-indexed)
-    const daysDiff = Math.floor((currentDate.getTime() - groupStartDate.getTime()) / (1000 * 60 * 60 * 24))
-    return daysDiff + 1 // 1-indexed (day 1, day 2, etc.)
-  }
-
   const navigateMonth = async (direction: 'prev' | 'next') => {
     if (isAnimating) return
     await animateToNextMonth(direction)
@@ -287,12 +267,8 @@ export default function CalendarDialog({
     return isSameLocalDay(date, getLocalToday())
   }
 
-  const isCurrentMonth = (date: Date) => {
-    return date.getMonth() === currentMonth.getMonth()
-  }
-
   // Render a calendar month grid
-  const renderMonthGrid = (month: Date, isMainMonth: boolean = true) => {
+  const renderMonthGrid = (month: Date) => {
     const monthDays = getCalendarDaysForMonth(month)
     
     return (
@@ -348,8 +324,6 @@ export default function CalendarDialog({
   }
 
   if (!isOpen) return null
-
-  const calendarDays = getCalendarDays()
 
   return (
     <div 
