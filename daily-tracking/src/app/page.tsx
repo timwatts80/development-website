@@ -96,7 +96,8 @@ export default function DailyTracker() {
         normalizedDate.setHours(0, 0, 0, 0)
         console.log('📅 Query date normalized:', {
           originalDate: selectedDate.toISOString(),
-          normalizedDate: normalizedDate.toISOString()
+          normalizedDate: normalizedDate.toISOString(),
+          queryString: `/api/task-completions/?date=${encodeURIComponent(normalizedDate.toISOString())}`
         })
         
         // Load both task groups and completions in parallel, but wait for both

@@ -11,12 +11,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date')
 
+    console.log('📅 API: Received completion request for date:', {
+      rawDate: date,
+      parsedDate: date ? new Date(date).toISOString() : null
+    })
+
     let completions
     if (date) {
       const targetDate = new Date(date)
       targetDate.setHours(0, 0, 0, 0)
       const nextDay = new Date(targetDate)
       nextDay.setDate(nextDay.getDate() + 1)
+
+      console.log('📅 API: Querying database for date range:', {
+        targetDate: targetDate.toISOString(),
+        nextDay: nextDay.toISOString()
+      })
 
       completions = await db
         .select()
@@ -26,6 +36,16 @@ export async function GET(request: NextRequest) {
             eq(taskCompletions.completedDate, targetDate)
           )
         )
+
+      console.log('📅 API: Found completions:', {
+        count: completions.length,
+        completions: completions.map(c => ({
+          id: c.id,
+          taskId: c.taskId,
+          completed: c.completed,
+          completedDate: c.completedDate.toISOString()
+        }))
+      })
     } else {
       completions = await db.select().from(taskCompletions)
     }
