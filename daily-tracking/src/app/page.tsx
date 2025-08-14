@@ -20,9 +20,36 @@ export default function DailyTracker() {
   const [migrationCompleted, setMigrationCompleted] = useState(false)
   const [dataFullyLoaded, setDataFullyLoaded] = useState(false)
 
+  // Global error handler for unhandled promise rejections
+  useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason)
+      event.preventDefault()
+    }
+
+    const handleError = (event: ErrorEvent) => {
+      console.error('Global error:', event.error)
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('unhandledrejection', handleUnhandledRejection)
+      window.addEventListener('error', handleError)
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+        window.removeEventListener('error', handleError)
+      }
+    }
+  }, [])
+
   // Load data from database on component mount
   useEffect(() => {
     const loadData = async () => {
+      const timeoutController = new AbortController()
+      const timeoutId = setTimeout(() => timeoutController.abort(), 10000) // 10 second timeout
+      
       try {
         setIsLoading(true)
         setIsLoadingCompletions(true)
@@ -32,19 +59,40 @@ export default function DailyTracker() {
         const hasLocalData = localStorage.getItem('dailyTracker_taskGroups')
         if (hasLocalData && !migrationCompleted) {
           console.log('Migrating data from localStorage to database...')
-          await DatabaseService.migrateFromLocalStorage()
+          await Promise.race([
+            DatabaseService.migrateFromLocalStorage(),
+            new Promise((_, reject) => 
+              timeoutController.signal.addEventListener('abort', () => 
+                reject(new Error('Migration timeout'))
+              )
+            )
+          ])
           setMigrationCompleted(true)
           // Clear localStorage after successful migration
           localStorage.removeItem('dailyTracker_taskGroups')
           localStorage.removeItem('dailyTracker_completionState')
         }
         
-        // Load task groups from database
-        const groups = await DatabaseService.getTaskGroups()
+        // Load task groups from database with timeout protection
+        const groups = await Promise.race([
+          DatabaseService.getTaskGroups(),
+          new Promise((_, reject) => 
+            timeoutController.signal.addEventListener('abort', () => 
+              reject(new Error('Task groups loading timeout'))
+            )
+          )
+        ]) as TaskGroup[]
         setTaskGroups(groups)
         
         // Load task completions for today - always load, even if no groups
-        const completions = await DatabaseService.getTaskCompletions(selectedDate)
+        const completions = await Promise.race([
+          DatabaseService.getTaskCompletions(selectedDate),
+          new Promise((_, reject) => 
+            timeoutController.signal.addEventListener('abort', () => 
+              reject(new Error('Task completions loading timeout'))
+            )
+          )
+        ]) as any[]
         const completionMap: {[key: string]: boolean} = {}
         completions.forEach(completion => {
           completionMap[completion.taskId] = completion.completed
@@ -54,10 +102,13 @@ export default function DailyTracker() {
         
         // Mark all data as fully loaded
         setDataFullyLoaded(true)
+        clearTimeout(timeoutId)
         
       } catch (error) {
         console.error('Failed to load data:', error)
-        // Fallback to localStorage if database fails
+        clearTimeout(timeoutId) // Clean up timeout
+        
+        // Fallback to localStorage if database fails or times out
         const savedGroups = localStorage.getItem('dailyTracker_taskGroups')
         const savedCompletionState = localStorage.getItem('dailyTracker_completionState')
         

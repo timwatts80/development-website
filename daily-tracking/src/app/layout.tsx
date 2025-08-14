@@ -3,9 +3,13 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import PasswordGate from "@/components/PasswordGate";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const inter = Inter({
   subsets: ["latin"],
+  display: "swap", // Improve font loading performance
+  preload: true,
+  fallback: ['system-ui', 'arial'], // Better fallback fonts
 });
 
 export const metadata: Metadata = {
@@ -21,11 +25,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider>
-          <PasswordGate>
-            {children}
-          </PasswordGate>
-        </ThemeProvider>
+        <ErrorBoundary>
+          <ThemeProvider>
+            <PasswordGate>
+              {children}
+            </PasswordGate>
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
