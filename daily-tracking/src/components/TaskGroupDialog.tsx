@@ -3,12 +3,12 @@
 import React, { useState } from 'react'
 import { X, Plus, Minus, Trash2, Palette } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { getLocalDateString, parseLocalDate, getLocalToday } from '@/utils/dateUtils'
 
 interface Task {
   id: string
   text: string
   completed: boolean
-  type: 'habit' | 'task'
 }
 
 interface TaskGroup {
@@ -43,9 +43,8 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, editingGroup 
   const [groupName, setGroupName] = useState('')
   const [selectedColor, setSelectedColor] = useState(colorOptions[0].value)
   const [duration, setDuration] = useState(7)
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]) // Today's date in YYYY-MM-DD format
+  const [startDate, setStartDate] = useState(getLocalDateString(getLocalToday())) // Today's date in local timezone
   const [newTasks, setNewTasks] = useState<string[]>([''])
-  const [newTaskTypes, setNewTaskTypes] = useState<('task' | 'habit')[]>(['task'])
   const dialogContentRef = React.useRef<HTMLDivElement>(null)
 
   // Initialize form when editing
@@ -54,24 +53,21 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, editingGroup 
       setGroupName(editingGroup.name)
       setSelectedColor(editingGroup.color)
       setDuration(editingGroup.duration)
-      setStartDate(editingGroup.startDate.toISOString().split('T')[0])
+      setStartDate(getLocalDateString(editingGroup.startDate))
       
       // For editing, show all existing tasks as new task fields
       if (editingGroup.tasks.length > 0) {
         setNewTasks(editingGroup.tasks.map(task => task.text))
-        setNewTaskTypes(editingGroup.tasks.map(task => task.type))
       } else {
         setNewTasks([''])
-        setNewTaskTypes(['task'])
       }
     } else {
       // Reset form for new group
       setGroupName('')
       setSelectedColor(colorOptions[0].value)
       setDuration(7)
-      setStartDate(new Date().toISOString().split('T')[0])
+      setStartDate(getLocalDateString(getLocalToday()))
       setNewTasks([''])
-      setNewTaskTypes(['task'])
     }
   }, [editingGroup])
 
@@ -87,14 +83,13 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, editingGroup 
           `${Date.now()}-${index}`, // Generate new IDs for new group
         text: taskText.trim(),
         completed: editingGroup ? (editingGroup.tasks[index]?.completed || false) : false, // Preserve completion state
-        type: newTaskTypes[index] || 'task'
       }))
 
     onSave({
       name: groupName,
       color: selectedColor,
       duration,
-      startDate: new Date(startDate),
+      startDate: parseLocalDate(startDate),
       tasks: allTasks
     })
 
@@ -103,13 +98,11 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, editingGroup 
     setSelectedColor(colorOptions[0].value)
     setDuration(7)
     setNewTasks([''])
-    setNewTaskTypes(['task'])
     onClose()
   }
 
   const addNewTaskField = () => {
     setNewTasks(prev => [...prev, ''])
-    setNewTaskTypes(prev => [...prev, 'task'])
     
     // Scroll to bottom after the new field is rendered
     setTimeout(() => {
@@ -121,15 +114,10 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, editingGroup 
 
   const removeNewTaskField = (index: number) => {
     setNewTasks(prev => prev.filter((_, i) => i !== index))
-    setNewTaskTypes(prev => prev.filter((_, i) => i !== index))
   }
 
   const updateNewTask = (index: number, value: string) => {
     setNewTasks(prev => prev.map((task, i) => i === index ? value : task))
-  }
-
-  const updateNewTaskType = (index: number, type: 'task' | 'habit') => {
-    setNewTaskTypes(prev => prev.map((taskType, i) => i === index ? type : taskType))
   }
 
   const handleDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -264,30 +252,6 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, editingGroup 
                       placeholder={`Task ${index + 1}...`}
                       className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                     />
-                    <div className="flex items-center space-x-1">
-                      <button
-                        type="button"
-                        onClick={() => updateNewTaskType(index, 'task')}
-                        className={`px-3 py-2 h-10 rounded text-xs font-medium transition-colors ${
-                          newTaskTypes[index] === 'task'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-2 border-blue-300 dark:border-blue-700'
-                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 border-2 border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-blue-900/50'
-                        }`}
-                      >
-                        Task
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateNewTaskType(index, 'habit')}
-                        className={`px-3 py-2 h-10 rounded text-xs font-medium transition-colors ${
-                          newTaskTypes[index] === 'habit'
-                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 border-2 border-purple-300 dark:border-purple-700'
-                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 border-2 border-gray-200 dark:border-gray-600 hover:bg-purple-50 dark:hover:bg-purple-900/50'
-                        }`}
-                      >
-                        Habit
-                      </button>
-                    </div>
                     {newTasks.length > 1 && (
                       <button
                         type="button"

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { taskCompletions } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql, gte, lte } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,20 +10,49 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
 
-    console.log('📅 API: Received completion request for date:', {
-      rawDate: date,
-      parsedDate: date ? new Date(date).toISOString() : null
+    console.log('📅 API: Received completion request:', {
+      singleDate: date,
+      dateRange: startDate && endDate ? { startDate, endDate } : null
     })
 
     let completions
-    if (date) {
+    if (startDate && endDate) {
+      // Handle date range query for calendar view
+      const start = new Date(startDate)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+
+      console.log('📅 API: Querying database for date range:', {
+        startDate: start.toISOString(),
+        endDate: end.toISOString()
+      })
+
+      completions = await db
+        .select()
+        .from(taskCompletions)
+        .where(
+          and(
+            gte(taskCompletions.completedDate, start),
+            lte(taskCompletions.completedDate, end)
+          )
+        )
+
+      console.log('📅 API: Found range completions:', {
+        count: completions.length,
+        dateRange: { start: start.toISOString(), end: end.toISOString() }
+      })
+    } else if (date) {
+      // Handle single date query for daily view
       const targetDate = new Date(date)
       targetDate.setHours(0, 0, 0, 0)
       const nextDay = new Date(targetDate)
       nextDay.setDate(nextDay.getDate() + 1)
 
-      console.log('📅 API: Querying database for date range:', {
+      console.log('📅 API: Querying database for single date:', {
         targetDate: targetDate.toISOString(),
         nextDay: nextDay.toISOString()
       })
@@ -37,7 +66,7 @@ export async function GET(request: NextRequest) {
           )
         )
 
-      console.log('📅 API: Found completions:', {
+      console.log('📅 API: Found single date completions:', {
         count: completions.length,
         completions: completions.map(c => ({
           id: c.id,

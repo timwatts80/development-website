@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { taskGroups, tasks } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { parseLocalDate, localDateToUTC, utcDateToLocal } from '@/utils/dateUtils'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ export async function GET() {
       .from(taskGroups)
       .orderBy(taskGroups.createdAt)
 
-    // Fetch tasks for each group
+    // Fetch tasks for each group and convert UTC dates back to local dates
     const groupsWithTasks = await Promise.all(
       groups.map(async (group) => {
         const groupTasks = await db
@@ -24,6 +25,8 @@ export async function GET() {
 
         return {
           ...group,
+          // Convert UTC startDate back to local date for client
+          startDate: utcDateToLocal(group.startDate),
           tasks: groupTasks
         }
       })
@@ -41,6 +44,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, color, duration, startDate, tasks: taskList } = body
 
+    // Parse the startDate as a local date, then convert to UTC for database storage
+    const localStartDate = typeof startDate === 'string' ? parseLocalDate(startDate) : new Date(startDate)
+    const utcStartDate = localDateToUTC(localStartDate)
+
+    console.log('📅 API: Creating task group with startDate:', {
+      rawStartDate: startDate,
+      localStartDate: localStartDate.toISOString(),
+      utcStartDate: utcStartDate.toISOString()
+    })
+
     // Create task group
     const [newGroup] = await db
       .insert(taskGroups)
@@ -48,7 +61,7 @@ export async function POST(request: NextRequest) {
         name,
         color,
         duration,
-        startDate: new Date(startDate)
+        startDate: utcStartDate
       })
       .returning()
 
@@ -58,10 +71,9 @@ export async function POST(request: NextRequest) {
       const insertedTasks = await db
         .insert(tasks)
         .values(
-          taskList.map((task: { text: string; type: string; completed?: boolean }) => ({
+          taskList.map((task: { text: string; completed?: boolean }) => ({
             groupId: newGroup.id,
             text: task.text,
-            type: task.type,
             completed: task.completed || false
           }))
         )
@@ -72,6 +84,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ...newGroup,
+      // Convert UTC startDate back to local date for client
+      startDate: utcDateToLocal(newGroup.startDate),
       tasks: newTasks
     })
   } catch (error) {
@@ -85,6 +99,10 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, name, color, duration, startDate, tasks: taskList } = body
 
+    // Parse the startDate as a local date, then convert to UTC for database storage
+    const localStartDate = typeof startDate === 'string' ? parseLocalDate(startDate) : new Date(startDate)
+    const utcStartDate = localDateToUTC(localStartDate)
+
     // Update task group
     const [updatedGroup] = await db
       .update(taskGroups)
@@ -92,7 +110,7 @@ export async function PUT(request: NextRequest) {
         name,
         color,
         duration,
-        startDate: new Date(startDate),
+        startDate: utcStartDate,
         updatedAt: new Date()
       })
       .where(eq(taskGroups.id, id))
@@ -106,10 +124,9 @@ export async function PUT(request: NextRequest) {
       const insertedTasks = await db
         .insert(tasks)
         .values(
-          taskList.map((task: { text: string; type: string; completed?: boolean }) => ({
+          taskList.map((task: { text: string; completed?: boolean }) => ({
             groupId: id,
             text: task.text,
-            type: task.type,
             completed: task.completed || false
           }))
         )
@@ -120,6 +137,8 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       ...updatedGroup,
+      // Convert UTC startDate back to local date for client
+      startDate: utcDateToLocal(updatedGroup.startDate),
       tasks: newTasks
     })
   } catch (error) {

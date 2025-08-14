@@ -1,11 +1,12 @@
-interface Task {
+import { getLocalDateString } from '@/utils/dateUtils'
+
+export interface Task {
   id: string
   text: string
   completed: boolean
-  type: 'habit' | 'task'
 }
 
-interface TaskGroup {
+export interface TaskGroup {
   id: string
   name: string
   color: string
@@ -95,10 +96,21 @@ export class DatabaseService {
 
   static async createTaskGroup(groupData: Omit<TaskGroup, 'id' | 'createdAt'>): Promise<TaskGroup> {
     try {
+      // Send startDate as a local date string (YYYY-MM-DD) to avoid timezone issues
+      const dataToSend = {
+        ...groupData,
+        startDate: getLocalDateString(groupData.startDate)
+      }
+      
+      console.log('🌐 Client: Sending task group data:', {
+        originalStartDate: groupData.startDate,
+        localDateString: dataToSend.startDate
+      })
+
       const response = await fetch(`${this.apiBaseUrl}/task-groups`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(groupData)
+        body: JSON.stringify(dataToSend)
       })
       
       if (!response.ok) {
@@ -346,5 +358,3 @@ export class DatabaseService {
     }
   }
 }
-
-export type { Task, TaskGroup, TaskCompletion }
