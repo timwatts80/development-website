@@ -68,6 +68,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 # GitHub OAuth  
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret`}
+{/* OK: example documentation strings, not actual secrets */}
             </pre>
           </div>
           <Button 
