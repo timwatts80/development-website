@@ -5,6 +5,7 @@ import { CheckCircle, Circle, Target, Calendar, TrendingUp, Users, Edit2, Trash2
 import { Button } from '@/components/ui/Button'
 import TaskGroupDialog from '@/components/TaskGroupDialog'
 import CalendarDialog from '@/components/CalendarDialog'
+import TaskLoadingSpinner from '@/components/TaskLoadingSpinner'
 import { DatabaseService, TaskGroup, Task } from '@/services/database'
 
 export default function DailyTracker() {
@@ -17,6 +18,7 @@ export default function DailyTracker() {
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingCompletions, setIsLoadingCompletions] = useState(true)
   const [migrationCompleted, setMigrationCompleted] = useState(false)
+  const [dataFullyLoaded, setDataFullyLoaded] = useState(false)
 
   // Load data from database on component mount
   useEffect(() => {
@@ -24,6 +26,7 @@ export default function DailyTracker() {
       try {
         setIsLoading(true)
         setIsLoadingCompletions(true)
+        setDataFullyLoaded(false)
         
         // Check if we need to migrate from localStorage
         const hasLocalData = localStorage.getItem('dailyTracker_taskGroups')
@@ -40,7 +43,7 @@ export default function DailyTracker() {
         const groups = await DatabaseService.getTaskGroups()
         setTaskGroups(groups)
         
-        // Load task completions for today
+        // Load task completions for today - always load, even if no groups
         const completions = await DatabaseService.getTaskCompletions(selectedDate)
         const completionMap: {[key: string]: boolean} = {}
         completions.forEach(completion => {
@@ -48,6 +51,9 @@ export default function DailyTracker() {
         })
         setTaskCompletionState(completionMap)
         setIsLoadingCompletions(false)
+        
+        // Mark all data as fully loaded
+        setDataFullyLoaded(true)
         
       } catch (error) {
         console.error('Failed to load data:', error)
@@ -85,6 +91,8 @@ export default function DailyTracker() {
           }
         }
         setIsLoadingCompletions(false)
+        // Even on error, mark as loaded so UI doesn't hang
+        setDataFullyLoaded(true)
       } finally {
         setIsLoading(false)
       }
@@ -99,24 +107,29 @@ export default function DailyTracker() {
     const loadCompletions = async () => {
       try {
         setIsLoadingCompletions(true)
+        setDataFullyLoaded(false)
         const completions = await DatabaseService.getTaskCompletions(selectedDate)
         const completionMap: {[key: string]: boolean} = {}
         completions.forEach(completion => {
           completionMap[completion.taskId] = completion.completed
         })
         setTaskCompletionState(completionMap)
+        setDataFullyLoaded(true)
       } catch (error) {
         console.error('Failed to load completions:', error)
+        // Even on error, mark as loaded so UI doesn't hang
+        setDataFullyLoaded(true)
       } finally {
         setIsLoadingCompletions(false)
       }
     }
 
-    // Load whenever we have task groups
-    if (taskGroups.length > 0) {
+    // Load completions whenever we have task groups OR when date changes
+    // This ensures completions are always loaded, even if no task groups exist
+    if (taskGroups.length > 0 || !isLoading) {
       loadCompletions()
     }
-  }, [selectedDate, taskGroups.length])
+  }, [selectedDate, taskGroups.length, isLoading])
 
   // Get selected date formatted
   const getSelectedDateFormatted = () => {
@@ -274,16 +287,13 @@ export default function DailyTracker() {
     }
   }
 
-  // Show loading state - wait for both task groups and completions to load
-  if (isLoading || isLoadingCompletions) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading your tasks...</p>
-        </div>
-      </div>
-    )
+  // Show loading state - wait for both task groups and completions to load completely
+  if (isLoading || isLoadingCompletions || !dataFullyLoaded) {
+    const stage = isLoading ? 'task-groups' : 
+                  isLoadingCompletions ? 'completions' : 
+                  'synchronizing'
+    
+    return <TaskLoadingSpinner stage={stage} />
   }
 
   // Get today's tasks from active task groups
