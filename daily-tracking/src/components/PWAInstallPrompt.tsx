@@ -32,10 +32,12 @@ export default function PWAInstallPrompt() {
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      console.log('beforeinstallprompt event fired');
+      console.log('PWA: beforeinstallprompt event fired');
+      console.log('PWA: Is mobile device:', isMobile);
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallPrompt(true);
+      console.log('PWA: Install prompt should show');
     };
 
     // For mobile devices without beforeinstallprompt, show install info after a delay
@@ -90,12 +92,22 @@ export default function PWAInstallPrompt() {
     setShowInstallPrompt(false);
     // Hide for this session
     sessionStorage.setItem('installPromptDismissed', 'true');
+    console.log('PWA: Install prompt dismissed');
   };
 
   // Don't show if already installed or dismissed
-  if (isInstalled || !showInstallPrompt || sessionStorage.getItem('installPromptDismissed')) {
+  // Temporarily disable session storage check for debugging
+  // if (isInstalled || !showInstallPrompt || sessionStorage.getItem('installPromptDismissed')) {
+  if (isInstalled || !showInstallPrompt) {
+    console.log('PWA: Install prompt hidden because:', {
+      isInstalled,
+      showInstallPrompt,
+      dismissed: !!sessionStorage.getItem('installPromptDismissed')
+    });
     return null;
   }
+
+  console.log('PWA: Rendering install prompt', { isMobile, deferredPrompt: !!deferredPrompt });
 
   return (
     <div className="fixed bottom-4 left-4 right-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 z-50">
