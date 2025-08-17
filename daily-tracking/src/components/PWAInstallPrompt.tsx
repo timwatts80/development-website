@@ -42,7 +42,7 @@ export default function PWAInstallPrompt() {
 
     // For mobile devices without beforeinstallprompt, show install info after a delay
     const showMobileInstallInfo = () => {
-      if (isMobile && !deferredPrompt && !sessionStorage.getItem('installPromptDismissed')) {
+      if (isMobile && !deferredPrompt && typeof window !== 'undefined' && !sessionStorage.getItem('installPromptDismissed')) {
         setTimeout(() => {
           setShowInstallPrompt(true);
         }, 3000); // Show after 3 seconds on mobile
@@ -90,9 +90,9 @@ export default function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowInstallPrompt(false);
-    // Hide for this session
-    sessionStorage.setItem('installPromptDismissed', 'true');
-    console.log('PWA: Install prompt dismissed');
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('installPromptDismissed', 'true');
+    }
   };
 
   // Don't show if already installed or dismissed
@@ -102,7 +102,7 @@ export default function PWAInstallPrompt() {
     console.log('PWA: Install prompt hidden because:', {
       isInstalled,
       showInstallPrompt,
-      dismissed: !!sessionStorage.getItem('installPromptDismissed')
+      dismissed: typeof window !== 'undefined' ? !!sessionStorage.getItem('installPromptDismissed') : false
     });
     return null;
   }
