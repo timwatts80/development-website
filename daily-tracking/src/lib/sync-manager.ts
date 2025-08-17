@@ -5,12 +5,35 @@
 
 import { offlineDB, OfflineEntry, OfflineCategory } from './offline-db';
 
+export interface EntryData {
+  date: string;
+  category: string;
+  notes?: string;
+  completed: boolean;
+}
+
+export interface CategoryData {
+  name: string;
+  color: string;
+  icon: string;
+}
+
+export interface ServerEntry {
+  id: string;
+  date: string;
+  categoryId: string;
+  notes?: string;
+  completed: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SyncOperation {
   id?: number;
   operation: 'create' | 'update' | 'delete';
   entityType: 'entry' | 'category';
   entityId: string;
-  data?: any;
+  data?: EntryData | CategoryData | Partial<OfflineEntry> | Partial<OfflineCategory>;
   timestamp: number;
   retryCount: number;
   maxRetries: number;
@@ -175,7 +198,7 @@ class SyncManager {
     }
   }
 
-  private async reconcileWithServer(serverEntries: any[]): Promise<void> {
+  private async reconcileWithServer(serverEntries: ServerEntry[]): Promise<void> {
     // Simple reconciliation - server wins for now
     // In a more sophisticated implementation, we'd check timestamps
     // and implement proper conflict resolution
