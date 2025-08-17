@@ -66,6 +66,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip non-GET requests (OPTIONS, POST, etc.)
+  if (request.method !== 'GET') {
+    return;
+  }
+
   // Handle API requests
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(handleApiRequest(request));

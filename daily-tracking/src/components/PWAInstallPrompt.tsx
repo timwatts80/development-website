@@ -11,6 +11,7 @@ export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
@@ -21,7 +22,13 @@ export default function PWAInstallPrompt() {
       }
     };
 
+    // Check if on mobile
+    const checkMobile = () => {
+      setIsMobile(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+
     checkInstalled();
+    checkMobile();
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -29,6 +36,15 @@ export default function PWAInstallPrompt() {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallPrompt(true);
+    };
+
+    // For mobile devices without beforeinstallprompt, show install info after a delay
+    const showMobileInstallInfo = () => {
+      if (isMobile && !deferredPrompt && !sessionStorage.getItem('installPromptDismissed')) {
+        setTimeout(() => {
+          setShowInstallPrompt(true);
+        }, 3000); // Show after 3 seconds on mobile
+      }
     };
 
     // Listen for app installed event
@@ -41,6 +57,8 @@ export default function PWAInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
+    
+    showMobileInstallInfo();
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -87,7 +105,10 @@ export default function PWAInstallPrompt() {
             Install Daily Tracker
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            Add to your home screen for quick access and offline use
+            {isMobile && !deferredPrompt ? 
+              'Tap your browser menu and select "Add to Home Screen"' :
+              'Add to your home screen for quick access and offline use'
+            }
           </p>
         </div>
         <div className="flex gap-2 ml-4">
@@ -97,12 +118,21 @@ export default function PWAInstallPrompt() {
           >
             Not now
           </button>
-          <button
-            onClick={handleInstallClick}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-md transition-colors"
-          >
-            Install
-          </button>
+          {deferredPrompt ? (
+            <button
+              onClick={handleInstallClick}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-md transition-colors"
+            >
+              Install
+            </button>
+          ) : (
+            <button
+              onClick={handleDismiss}
+              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-md transition-colors"
+            >
+              Got it
+            </button>
+          )}
         </div>
       </div>
     </div>
