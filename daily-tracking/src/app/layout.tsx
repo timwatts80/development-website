@@ -8,6 +8,7 @@ import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import { OfflineDataProvider } from "@/contexts/OfflineDataContext";
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
+import { PWAUpdateManager } from "@/components/PWAUpdateManager";
 
 export const metadata: Metadata = {
   title: "Daily Tracker",
@@ -56,6 +57,7 @@ export default function RootLayout({
                   {children}
                 </PasswordGate>
                 <PWAInstallPrompt />
+                <PWAUpdateManager />
               </OfflineDataProvider>
             </ThemeProvider>
           </PWAProvider>

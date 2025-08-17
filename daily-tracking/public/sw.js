@@ -1,7 +1,7 @@
 // Daily Tracker Service Worker
-const CACHE_NAME = 'daily-tracker-v1';
-const STATIC_CACHE_NAME = 'daily-tracker-static-v1';
-const DYNAMIC_CACHE_NAME = 'daily-tracker-dynamic-v1';
+const CACHE_NAME = 'daily-tracker-v2';
+const STATIC_CACHE_NAME = 'daily-tracker-static-v2';
+const DYNAMIC_CACHE_NAME = 'daily-tracker-dynamic-v2';
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -229,6 +229,14 @@ async function doBackgroundSync() {
   console.log('Service Worker: Performing background sync');
   // This will be implemented in Phase 2 with IndexedDB sync queue
 }
+
+// Message listener for update management
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('Service Worker: Received SKIP_WAITING message');
+    self.skipWaiting();
+  }
+});
 
 // Utility function to clean up old caches
 async function cleanupCaches() {
