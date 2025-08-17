@@ -6,6 +6,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import PWAProvider from "@/components/PWAProvider";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import OfflineIndicator from "@/components/OfflineIndicator";
+import { OfflineDataProvider } from "@/contexts/OfflineDataContext";
+import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
 
 export const metadata: Metadata = {
   title: "Daily Tracker",
@@ -47,11 +49,14 @@ export default function RootLayout({
         <ErrorBoundary>
           <PWAProvider>
             <ThemeProvider>
-              <OfflineIndicator />
-              <PasswordGate>
-                {children}
-              </PasswordGate>
-              <PWAInstallPrompt />
+              <OfflineDataProvider>
+                <OfflineIndicator />
+                <SyncStatusIndicator />
+                <PasswordGate>
+                  {children}
+                </PasswordGate>
+                <PWAInstallPrompt />
+              </OfflineDataProvider>
             </ThemeProvider>
           </PWAProvider>
         </ErrorBoundary>
