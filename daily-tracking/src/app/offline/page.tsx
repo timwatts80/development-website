@@ -11,11 +11,11 @@ export default function OfflinePage() {
         </div>
         
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          You're Offline
+          You&apos;re Offline
         </h1>
         
         <p className="text-gray-600 dark:text-gray-300 mb-8">
-          No internet connection detected. Don't worry - you can still view your cached data and add new entries when you're back online.
+          No internet connection detected. Don&apos;t worry - you can still view your cached data and add new entries when you&apos;re back online.
         </p>
         
         <div className="space-y-4">
@@ -42,7 +42,7 @@ export default function OfflinePage() {
             <li>• View your existing tasks and progress</li>
             <li>• Add new tasks and completions</li>
             <li>• Browse your calendar history</li>
-            <li>• Changes sync when you're back online</li>
+            <li>• Changes sync when you&apos;re back online</li>
           </ul>
         </div>
       </div>

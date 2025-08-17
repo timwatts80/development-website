@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { CheckCircle, Circle, Target, Calendar, TrendingUp, Users, Edit2, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react'
+import { CheckCircle, Circle, Target, Calendar, Users, Edit2, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import TaskGroupDialog from '@/components/TaskGroupDialog'
 import CalendarDialog from '@/components/CalendarDialog'
@@ -12,8 +12,7 @@ import {
   normalizeToLocalMidnight, 
   localDateToUTC, 
   utcDateToLocal,
-  getLocalMonthRange,
-  isSameLocalDay 
+  getLocalMonthRange
 } from '@/utils/dateUtils'
 
 export default function DailyTracker() {
@@ -283,8 +282,6 @@ export default function DailyTracker() {
 
     const loadCurrentAndAdjacentDays = async () => {
       if (!dataFullyLoaded) return
-      
-      const currentDateString = selectedDate.toISOString().split('T')[0]
       
       // Load current day (priority)
       const currentCompletions = await loadCompletions(selectedDate)
@@ -583,40 +580,6 @@ export default function DailyTracker() {
       return "Today's Tasks"
     } else {
       return "Tasks"
-    }
-  }
-
-  // Get progressive day count for the selected date
-  const getProgressiveDayInfo = () => {
-    const dateToCheck = normalizeToLocalMidnight(selectedDate)
-    const activeGroups: TaskGroup[] = []
-
-    taskGroups.forEach(group => {
-      const startDate = normalizeToLocalMidnight(group.startDate)
-      const endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + group.duration - 1) // End date of the group
-
-      // Check if selected date falls within the group's active period
-      if (dateToCheck >= startDate && dateToCheck <= endDate) {
-        activeGroups.push(group)
-      }
-    })
-
-    if (activeGroups.length === 0) return null
-    
-    // Use the first (primary) group for the count
-    const primaryGroup = activeGroups[0]
-    const groupStartDate = normalizeToLocalMidnight(new Date(primaryGroup.startDate))
-    const currentDate = normalizeToLocalMidnight(selectedDate)
-    
-    // Calculate days since start of group (1-indexed)
-    const daysDiff = Math.floor((currentDate.getTime() - groupStartDate.getTime()) / (1000 * 60 * 60 * 24))
-    const currentDay = daysDiff + 1 // 1-indexed (day 1, day 2, etc.)
-    
-    return {
-      currentDay,
-      totalDays: primaryGroup.duration,
-      groupName: primaryGroup.name
     }
   }
 
