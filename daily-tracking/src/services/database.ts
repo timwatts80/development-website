@@ -145,10 +145,26 @@ export class DatabaseService {
 
   static async updateTaskGroup(groupData: TaskGroup): Promise<TaskGroup> {
     try {
+      // Transform the data to match API expectations and use consistent date format
+      const apiData = {
+        id: groupData.id,
+        name: groupData.name,
+        color: groupData.color,
+        duration: groupData.duration,
+        startDate: getLocalDateString(groupData.startDate), // Use same date format as create
+        tasks: groupData.tasks // API expects 'tasks', not 'tasks: taskList'
+      }
+
+      console.log('🌐 Client: Updating task group data:', {
+        originalStartDate: groupData.startDate,
+        localDateString: apiData.startDate,
+        groupId: groupData.id
+      })
+
       const response = await fetch(`${this.apiBaseUrl}/task-groups`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(groupData)
+        body: JSON.stringify(apiData)
       })
       
       if (!response.ok) {
