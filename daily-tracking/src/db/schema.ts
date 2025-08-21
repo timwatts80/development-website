@@ -11,11 +11,12 @@ export const taskGroups = pgTable('task_groups', {
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 })
 
-// Tasks table
+// Tasks table - updated with type field
 export const tasks = pgTable('tasks', {
   id: uuid('id').primaryKey().defaultRandom(),
   groupId: uuid('group_id').references(() => taskGroups.id, { onDelete: 'cascade' }).notNull(),
   text: text('text').notNull(),
+  type: text('type').notNull().default('task'), // Add the missing type column
   completed: boolean('completed').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()

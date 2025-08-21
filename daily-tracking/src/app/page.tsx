@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { CheckCircle, Circle, Target, Calendar, TrendingUp, Users, Edit2, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react'
+import { CheckCircle, Circle, Target, Calendar, Users, Edit2, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import TaskGroupDialog from '@/components/TaskGroupDialog'
 import CalendarDialog from '@/components/CalendarDialog'
@@ -12,8 +12,7 @@ import {
   normalizeToLocalMidnight, 
   localDateToUTC, 
   utcDateToLocal,
-  getLocalMonthRange,
-  isSameLocalDay 
+  getLocalMonthRange
 } from '@/utils/dateUtils'
 
 export default function DailyTracker() {
@@ -284,8 +283,6 @@ export default function DailyTracker() {
     const loadCurrentAndAdjacentDays = async () => {
       if (!dataFullyLoaded) return
       
-      const currentDateString = selectedDate.toISOString().split('T')[0]
-      
       // Load current day (priority)
       const currentCompletions = await loadCompletions(selectedDate)
       setTaskCompletionState(currentCompletions)
@@ -479,27 +476,38 @@ export default function DailyTracker() {
     startDate: Date
     tasks: Task[]
   }) => {
+    console.log('🔧 handleCreateTaskGroup called with:', groupData)
+    console.log('🔧 editingGroup state:', editingGroup)
     try {
       if (editingGroup) {
+        console.log('🔧 UPDATING EXISTING GROUP:', editingGroup.id)
+        console.log('🔧 Group data being sent to updateTaskGroup:', {
+          ...editingGroup,
+          ...groupData
+        })
         // Update existing group
         const updatedGroup = await DatabaseService.updateTaskGroup({
           ...editingGroup,
           ...groupData
         })
+        console.log('🔧 Update successful, received:', updatedGroup)
         setTaskGroups(prev => prev.map(group => 
           group.id === editingGroup.id ? updatedGroup : group
         ))
         setEditingGroup(null)
       } else {
+        console.log('🔧 Creating new group')
         // Create new group
         const newGroup = await DatabaseService.createTaskGroup(groupData)
+        console.log('🔧 Create successful, received:', newGroup)
         setTaskGroups(prev => [...prev, newGroup])
       }
       setIsTaskGroupDialogOpen(false)
     } catch (error) {
-      console.error('Failed to save task group:', error)
+      console.error('🔧 Failed to save task group:', error)
       // Fallback to localStorage for offline support
       if (editingGroup) {
+        console.log('🔧 Using localStorage fallback for update')
         setTaskGroups(prev => prev.map(group => 
           group.id === editingGroup.id 
             ? { ...group, ...groupData }
@@ -507,6 +515,7 @@ export default function DailyTracker() {
         ))
         setEditingGroup(null)
       } else {
+        console.log('🔧 Using localStorage fallback for create')
         const newGroup: TaskGroup = {
           id: Date.now().toString(),
           name: groupData.name,
@@ -523,8 +532,11 @@ export default function DailyTracker() {
   }
 
   const handleEditTaskGroup = (group: TaskGroup) => {
+    console.log('🔧 handleEditTaskGroup called with group:', group)
     setEditingGroup(group)
+    console.log('🔧 editingGroup state set to:', group)
     setIsTaskGroupDialogOpen(true)
+    console.log('🔧 Dialog opened for editing')
   }
 
   const handleEditTaskGroupById = (taskGroupId: string) => {
@@ -583,40 +595,6 @@ export default function DailyTracker() {
       return "Today's Tasks"
     } else {
       return "Tasks"
-    }
-  }
-
-  // Get progressive day count for the selected date
-  const getProgressiveDayInfo = () => {
-    const dateToCheck = normalizeToLocalMidnight(selectedDate)
-    const activeGroups: TaskGroup[] = []
-
-    taskGroups.forEach(group => {
-      const startDate = normalizeToLocalMidnight(group.startDate)
-      const endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + group.duration - 1) // End date of the group
-
-      // Check if selected date falls within the group's active period
-      if (dateToCheck >= startDate && dateToCheck <= endDate) {
-        activeGroups.push(group)
-      }
-    })
-
-    if (activeGroups.length === 0) return null
-    
-    // Use the first (primary) group for the count
-    const primaryGroup = activeGroups[0]
-    const groupStartDate = normalizeToLocalMidnight(new Date(primaryGroup.startDate))
-    const currentDate = normalizeToLocalMidnight(selectedDate)
-    
-    // Calculate days since start of group (1-indexed)
-    const daysDiff = Math.floor((currentDate.getTime() - groupStartDate.getTime()) / (1000 * 60 * 60 * 24))
-    const currentDay = daysDiff + 1 // 1-indexed (day 1, day 2, etc.)
-    
-    return {
-      currentDay,
-      totalDays: primaryGroup.duration,
-      groupName: primaryGroup.name
     }
   }
 

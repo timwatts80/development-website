@@ -72,18 +72,69 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, editingGroup 
   }, [editingGroup])
 
   const handleSave = () => {
+    console.log('🔧 TaskGroupDialog handleSave called')
+    console.log('🔧 editingGroup in dialog:', editingGroup)
+    console.log('🔧 Form data:', { groupName, selectedColor, duration, startDate, newTasks })
+    
     if (!groupName.trim()) return
 
     // Create all tasks from the new task fields
     const allTasks = newTasks
       .filter(taskText => taskText.trim())
-      .map((taskText, index) => ({
-        id: editingGroup ? 
-          (editingGroup.tasks[index]?.id || `${Date.now()}-${index}`) : // Preserve existing task IDs when editing
-          `${Date.now()}-${index}`, // Generate new IDs for new group
-        text: taskText.trim(),
-        completed: editingGroup ? (editingGroup.tasks[index]?.completed || false) : false, // Preserve completion state
-      }))
+      .map((taskText, index) => {
+        const trimmedText = taskText.trim()
+        
+        if (editingGroup) {
+          // When editing, try to preserve existing task IDs by matching text content
+          // This helps maintain completion state even when tasks are reordered
+          const existingTask = editingGroup.tasks.find(task => task.text === trimmedText)
+          
+          if (existingTask) {
+            // Found exact text match - preserve the original task ID and completion state
+            console.log('🔧 Preserving task ID for existing task:', { id: existingTask.id, text: trimmedText })
+            return {
+              id: existingTask.id,
+              text: trimmedText,
+              completed: existingTask.completed
+            }
+          } else {
+            // New task or renamed task - check if we can match by index for renamed tasks
+            const taskAtIndex = editingGroup.tasks[index]
+            if (taskAtIndex) {
+              // Task was likely renamed - preserve ID but update text
+              console.log('🔧 Preserving task ID for renamed task:', { oldId: taskAtIndex.id, oldText: taskAtIndex.text, newText: trimmedText })
+              return {
+                id: taskAtIndex.id,
+                text: trimmedText,
+                completed: taskAtIndex.completed
+              }
+            } else {
+              // Completely new task
+              console.log('🔧 Creating new task:', { text: trimmedText })
+              return {
+                id: `${Date.now()}-${index}`,
+                text: trimmedText,
+                completed: false
+              }
+            }
+          }
+        } else {
+          // Creating new group - all tasks are new
+          return {
+            id: `${Date.now()}-${index}`,
+            text: trimmedText,
+            completed: false
+          }
+        }
+      })
+
+    console.log('🔧 About to call onSave with:', {
+      name: groupName,
+      color: selectedColor,
+      duration,
+      startDate: parseLocalDate(startDate),
+      tasks: allTasks
+    })
 
     onSave({
       name: groupName,

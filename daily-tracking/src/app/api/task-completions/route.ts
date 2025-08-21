@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { taskCompletions } from '@/db/schema'
-import { eq, and, sql, gte, lte } from 'drizzle-orm'
+import { eq, and, gte, lte } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
