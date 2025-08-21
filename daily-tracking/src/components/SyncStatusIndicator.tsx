@@ -89,16 +89,18 @@ export function SyncStatusIndicator() {
   return (
     <div 
       className={`
-        fixed top-4 right-4 z-40 transition-all duration-300 ease-in-out
-        transform ${showToast ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
+        fixed top-4 left-1/2 transform -translate-x-1/2 z-50 
+        transition-all duration-500 ease-out
+        ${showToast ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-full opacity-0 scale-95'}
       `}
     >
       <div
         className={`
-          flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg border
+          flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg border
           ${styles.bgColor} ${styles.textColor}
           ${toastType === 'error' && isOnline ? 'cursor-pointer hover:opacity-80' : ''}
           transition-all duration-200 min-w-[140px]
+          ${showToast ? 'animate-bounce-once' : ''}
         `}
         onClick={handleClick}
         title={toastType === 'error' && isOnline ? 'Tap to retry sync' : toastMessage}

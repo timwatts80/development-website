@@ -48,6 +48,14 @@ export class DatabaseService {
       if (!response.ok) {
         throw new Error('API not available')
       }
+      
+      // API is available, try to sync any pending changes
+      try {
+        await this.syncPendingChanges()
+      } catch (syncError) {
+        console.warn('Failed to sync pending changes:', syncError)
+      }
+      
       const groups = await response.json()
       
       // Convert date strings back to Date objects
@@ -158,7 +166,9 @@ export class DatabaseService {
       console.log('🌐 Client: Updating task group data:', {
         originalStartDate: groupData.startDate,
         localDateString: apiData.startDate,
-        groupId: groupData.id
+        groupId: groupData.id,
+        groupName: groupData.name,
+        apiData: apiData
       })
 
       const response = await fetch(`${this.apiBaseUrl}/task-groups`, {
@@ -167,18 +177,30 @@ export class DatabaseService {
         body: JSON.stringify(apiData)
       })
       
+      console.log('🌐 Client: PUT response status:', response.status)
+      
       if (!response.ok) {
+        console.error('🌐 Client: PUT request failed:', response.status, response.statusText)
         throw new Error('API not available')
       }
       
       const group = await response.json()
+      console.log('🌐 Client: Received updated group from server:', group)
+      
+      // Clear any pending sync for this group since it succeeded
+      this.clearPendingSync(groupData.id)
+      
       return {
         ...group,
         startDate: new Date(group.startDate),
         createdAt: new Date(group.createdAt)
       }
-    } catch {
-      console.log('Using localStorage fallback for updating task group')
+    } catch (error) {
+      console.log('🌐 Client: Using localStorage fallback for updating task group, error:', error)
+      
+      // Mark this group for sync when server becomes available
+      this.markGroupForSync(groupData)
+      
       return this.updateTaskGroupInLocalStorage(groupData)
     }
   }
@@ -371,6 +393,70 @@ export class DatabaseService {
     } catch (error) {
       console.error('Migration failed:', error)
       return false
+    }
+  }
+
+  // Sync tracking methods for offline changes
+  private static PENDING_SYNC_KEY = 'dailyTracker_pendingSync'
+
+  private static markGroupForSync(groupData: TaskGroup): void {
+    try {
+      const pending = JSON.parse(localStorage.getItem(this.PENDING_SYNC_KEY) || '{}')
+      pending[groupData.id] = {
+        ...groupData,
+        startDate: groupData.startDate.toISOString(),
+        syncType: 'update',
+        timestamp: new Date().toISOString()
+      }
+      localStorage.setItem(this.PENDING_SYNC_KEY, JSON.stringify(pending))
+      console.log('🔄 Marked group for sync:', groupData.id)
+    } catch (error) {
+      console.error('Failed to mark group for sync:', error)
+    }
+  }
+
+  private static clearPendingSync(groupId: string): void {
+    try {
+      const pending = JSON.parse(localStorage.getItem(this.PENDING_SYNC_KEY) || '{}')
+      delete pending[groupId]
+      localStorage.setItem(this.PENDING_SYNC_KEY, JSON.stringify(pending))
+      console.log('🔄 Cleared pending sync for group:', groupId)
+    } catch (error) {
+      console.error('Failed to clear pending sync:', error)
+    }
+  }
+
+  static async syncPendingChanges(): Promise<void> {
+    try {
+      const pending = JSON.parse(localStorage.getItem(this.PENDING_SYNC_KEY) || '{}')
+      const pendingIds = Object.keys(pending)
+      
+      if (pendingIds.length === 0) {
+        console.log('🔄 No pending changes to sync')
+        return
+      }
+
+      console.log('🔄 Syncing pending changes for groups:', pendingIds)
+
+      for (const groupId of pendingIds) {
+        try {
+          const groupData = pending[groupId]
+          // Reconstruct the TaskGroup object
+          const taskGroup: TaskGroup = {
+            ...groupData,
+            startDate: new Date(groupData.startDate)
+          }
+          
+          // Try to sync with server
+          await this.updateTaskGroup(taskGroup)
+          console.log('🔄 Successfully synced group:', groupId)
+        } catch (error) {
+          console.warn('🔄 Failed to sync group:', groupId, error)
+          // Keep in pending list for next attempt
+        }
+      }
+    } catch (error) {
+      console.error('Failed to sync pending changes:', error)
     }
   }
 }

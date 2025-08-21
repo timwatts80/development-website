@@ -101,14 +101,11 @@ class SyncManager {
     this.notifyListeners('syncing');
 
     try {
-      // Get pending entries and sync them
-      const pendingEntries = await offlineDB.getPendingSync();
+      // NOTE: This app doesn't use the offline database sync pattern anymore
+      // It works directly with task-groups and task-completions APIs
+      // So we skip the pending entries sync that was causing 404 errors
       
-      for (const entry of pendingEntries) {
-        await this.syncEntry(entry);
-      }
-
-      // Start periodic sync
+      // Start periodic sync (currently disabled)
       if (!this.syncInterval) {
         this.syncInterval = setInterval(() => {
           if (this.isOnline) {
@@ -143,59 +140,59 @@ class SyncManager {
   }
 
   private async createEntryOnServer(entry: OfflineEntry): Promise<string> {
-    const response = await fetch('/api/entries', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        date: entry.date,
-        category: entry.category,
-        notes: entry.notes,
-        completed: entry.completed
-      }),
-    });
+    // DISABLED: This endpoint doesn't exist in our current API structure
+    // const response = await fetch('/api/entries', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify({
+    //     date: entry.date,
+    //     category: entry.category,
+    //     notes: entry.notes,
+    //     completed: entry.completed
+    //   }),
+    // });
 
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.status}`);
-    }
+    // if (!response.ok) {
+    //   throw new Error(`Server error: ${response.status}`);
+    // }
 
-    const result = await response.json();
-    return result.id;
+    // const result = await response.json();
+    // return result.id;
+    
+    // Return a fake ID since we're not actually syncing to server yet
+    return `temp-${Date.now()}`;
   }
 
   private async updateEntryOnServer(entry: OfflineEntry): Promise<void> {
-    const response = await fetch(`/api/entries/${entry.sync.serverId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        date: entry.date,
-        category: entry.category,
-        notes: entry.notes,
-        completed: entry.completed
-      }),
-    });
+    // DISABLED: This endpoint doesn't exist in our current API structure
+    // const response = await fetch(`/api/entries/${entry.sync.serverId}`, {
+    //   method: 'PUT',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify({
+    //     date: entry.date,
+    //     category: entry.category,
+    //     notes: entry.notes,
+    //     completed: entry.completed
+    //   }),
+    // });
 
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.status}`);
-    }
-
-    await offlineDB.markSynced(entry.id, entry.sync.serverId);
+    // if (!response.ok) {
+    //   throw new Error(`Server error: ${response.status}`);
+    // }
+    
+    // No-op since we're not actually syncing to server yet
+    console.log('Update would sync to server:', entry);
   }
 
   private async periodicSync(): Promise<void> {
-    // Fetch latest data from server and check for conflicts
-    try {
-      const response = await fetch('/api/entries');
-      if (response.ok) {
-        const serverEntries = await response.json();
-        await this.reconcileWithServer(serverEntries);
-      }
-    } catch (error) {
-      console.error('Periodic sync failed:', error);
-    }
+    // Periodic sync disabled - this app uses task-groups and task-completions endpoints
+    // The main sync functionality works through the regular API calls
+    // TODO: Implement proper periodic sync for task groups and completions if needed
+    return;
   }
 
   private async reconcileWithServer(serverEntries: ServerEntry[]): Promise<void> {

@@ -476,27 +476,38 @@ export default function DailyTracker() {
     startDate: Date
     tasks: Task[]
   }) => {
+    console.log('🔧 handleCreateTaskGroup called with:', groupData)
+    console.log('🔧 editingGroup state:', editingGroup)
     try {
       if (editingGroup) {
+        console.log('🔧 UPDATING EXISTING GROUP:', editingGroup.id)
+        console.log('🔧 Group data being sent to updateTaskGroup:', {
+          ...editingGroup,
+          ...groupData
+        })
         // Update existing group
         const updatedGroup = await DatabaseService.updateTaskGroup({
           ...editingGroup,
           ...groupData
         })
+        console.log('🔧 Update successful, received:', updatedGroup)
         setTaskGroups(prev => prev.map(group => 
           group.id === editingGroup.id ? updatedGroup : group
         ))
         setEditingGroup(null)
       } else {
+        console.log('🔧 Creating new group')
         // Create new group
         const newGroup = await DatabaseService.createTaskGroup(groupData)
+        console.log('🔧 Create successful, received:', newGroup)
         setTaskGroups(prev => [...prev, newGroup])
       }
       setIsTaskGroupDialogOpen(false)
     } catch (error) {
-      console.error('Failed to save task group:', error)
+      console.error('🔧 Failed to save task group:', error)
       // Fallback to localStorage for offline support
       if (editingGroup) {
+        console.log('🔧 Using localStorage fallback for update')
         setTaskGroups(prev => prev.map(group => 
           group.id === editingGroup.id 
             ? { ...group, ...groupData }
@@ -504,6 +515,7 @@ export default function DailyTracker() {
         ))
         setEditingGroup(null)
       } else {
+        console.log('🔧 Using localStorage fallback for create')
         const newGroup: TaskGroup = {
           id: Date.now().toString(),
           name: groupData.name,
@@ -520,8 +532,11 @@ export default function DailyTracker() {
   }
 
   const handleEditTaskGroup = (group: TaskGroup) => {
+    console.log('🔧 handleEditTaskGroup called with group:', group)
     setEditingGroup(group)
+    console.log('🔧 editingGroup state set to:', group)
     setIsTaskGroupDialogOpen(true)
+    console.log('🔧 Dialog opened for editing')
   }
 
   const handleEditTaskGroupById = (taskGroupId: string) => {

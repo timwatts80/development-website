@@ -72,6 +72,10 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, editingGroup 
   }, [editingGroup])
 
   const handleSave = () => {
+    console.log('🔧 TaskGroupDialog handleSave called')
+    console.log('🔧 editingGroup in dialog:', editingGroup)
+    console.log('🔧 Form data:', { groupName, selectedColor, duration, startDate, newTasks })
+    
     if (!groupName.trim()) return
 
     // Create all tasks from the new task fields
@@ -84,6 +88,14 @@ export default function TaskGroupDialog({ isOpen, onClose, onSave, editingGroup 
         text: taskText.trim(),
         completed: editingGroup ? (editingGroup.tasks[index]?.completed || false) : false, // Preserve completion state
       }))
+
+    console.log('🔧 About to call onSave with:', {
+      name: groupName,
+      color: selectedColor,
+      duration,
+      startDate: parseLocalDate(startDate),
+      tasks: allTasks
+    })
 
     onSave({
       name: groupName,

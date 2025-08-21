@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
           taskList.map((task: { text: string; completed?: boolean }) => ({
             groupId: newGroup.id,
             text: task.text,
+            type: 'task', // Add the required type field
             completed: task.completed || false
           }))
         )
@@ -98,6 +99,8 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
     const { id, name, color, duration, startDate, tasks: taskList } = body
+
+    console.log('🔧 PUT: Updating task group with type field fix')
 
     // Parse the startDate as a local date, then convert to UTC for database storage
     const localStartDate = typeof startDate === 'string' ? parseLocalDate(startDate) : new Date(startDate)
@@ -127,6 +130,7 @@ export async function PUT(request: NextRequest) {
           taskList.map((task: { text: string; completed?: boolean }) => ({
             groupId: id,
             text: task.text,
+            type: 'task', // Add the required type field
             completed: task.completed || false
           }))
         )
