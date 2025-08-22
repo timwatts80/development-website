@@ -320,6 +320,7 @@ export default function DailyTracker() {
     }
 
     loadCurrentAndAdjacentDays()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, dataFullyLoaded])
 
   // Get selected date formatted

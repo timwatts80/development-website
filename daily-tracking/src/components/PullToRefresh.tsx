@@ -75,6 +75,7 @@ export default function PullToRefresh({
       container.removeEventListener('touchmove', handleTouchMove)  
       container.removeEventListener('touchend', handleTouchEnd)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPulling, pullDistance, threshold, isRefreshing])
 
   const shouldShowIndicator = isPulling && pullDistance > 20

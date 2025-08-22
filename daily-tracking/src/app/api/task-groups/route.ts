@@ -107,7 +107,7 @@ export async function PUT(request: NextRequest) {
       duration,
       startDate,
       taskCount: taskList?.length || 0,
-      tasks: taskList?.map((t: any) => ({ id: t.id, text: t.text, hasId: !!t.id })) || []
+      tasks: taskList?.map((t: { id: string; text: string }) => ({ id: t.id, text: t.text, hasId: !!t.id })) || []
     })
 
     // Parse the startDate as a local date, then convert to UTC for database storage
