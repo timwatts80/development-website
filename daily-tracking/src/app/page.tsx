@@ -144,6 +144,14 @@ export default function DailyTracker() {
         setTaskCompletionState(completionMap)
         console.log('✅ Completion state set:', completionMap)
         
+        // Cache the completion state using the same UTC date key format
+        const utcDateString = utcDate.toISOString().split('T')[0]
+        setCompletionCache(prev => ({
+          ...prev,
+          [utcDateString]: completionMap
+        }))
+        console.log('💾 Cached completions for date:', utcDateString, completionMap)
+        
         // Only after both are processed, mark as fully loaded
         setIsLoading(false)
         setIsLoadingCompletions(false)
@@ -214,7 +222,8 @@ export default function DailyTracker() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [migrationCompleted])
 
-  // Separate effect for loading completions when date changes
+  // Separate effect for loading completions when date changes (disabled - handled by main effect)
+  /*
   useEffect(() => {
     const loadCompletionsForDate = async () => {
       // Skip if still loading initial data
@@ -250,19 +259,24 @@ export default function DailyTracker() {
 
     loadCompletionsForDate()
   }, [selectedDate, isLoading, dataFullyLoaded])
+  */
 
     // Load completions when date changes
   useEffect(() => {
     const loadCompletions = async (date: Date) => {
-      const dateString = date.toISOString().split('T')[0]
+      // Use consistent UTC date for both API call and caching
+      const utcDate = localDateToUTC(date)
+      const dateString = utcDate.toISOString().split('T')[0]
       
       // Check cache first
       if (completionCache[dateString]) {
+        console.log('📅 Using cached completions for:', dateString, completionCache[dateString])
         return completionCache[dateString]
       }
       
+      console.log('📅 Loading completions from API for:', dateString)
       try {
-        const completions = await DatabaseService.getTaskCompletions(date)
+        const completions = await DatabaseService.getTaskCompletions(utcDate)
         const completionMap: {[key: string]: boolean} = {}
         completions.forEach(completion => {
           completionMap[completion.taskId] = completion.completed
@@ -273,6 +287,7 @@ export default function DailyTracker() {
           ...prev,
           [dateString]: completionMap
         }))
+        console.log('💾 Cached new completions for:', dateString, completionMap)
         
         return completionMap
       } catch (error) {
@@ -282,7 +297,12 @@ export default function DailyTracker() {
     }
 
     const loadCurrentAndAdjacentDays = async () => {
-      if (!dataFullyLoaded) return
+      if (!dataFullyLoaded) {
+        console.log('⏳ Skipping completion load - data not fully loaded yet')
+        return
+      }
+      
+      console.log('📅 Loading completions for date navigation:', selectedDate.toISOString())
       
       // Load current day (priority)
       const currentCompletions = await loadCompletions(selectedDate)
@@ -300,15 +320,7 @@ export default function DailyTracker() {
     }
 
     loadCurrentAndAdjacentDays()
-  }, [selectedDate, dataFullyLoaded, completionCache])
-
-  // Update task completion state when navigating to cached data
-  useEffect(() => {
-    const dateString = selectedDate.toISOString().split('T')[0]
-    if (completionCache[dateString] && dataFullyLoaded) {
-      setTaskCompletionState(completionCache[dateString])
-    }
-  }, [selectedDate, completionCache, dataFullyLoaded])
+  }, [selectedDate, dataFullyLoaded])
 
   // Get selected date formatted
   const getSelectedDateFormatted = () => {

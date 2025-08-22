@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { taskCompletions } from '@/db/schema'
-import { eq, and, gte, lte } from 'drizzle-orm'
+import { eq, and, gte, lte, lt } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,9 +22,9 @@ export async function GET(request: NextRequest) {
     if (startDate && endDate) {
       // Handle date range query for calendar view
       const start = new Date(startDate)
-      start.setHours(0, 0, 0, 0)
+      start.setUTCHours(0, 0, 0, 0)
       const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999)
+      end.setUTCHours(23, 59, 59, 999)
 
       console.log('📅 API: Querying database for date range:', {
         startDate: start.toISOString(),
@@ -48,9 +48,9 @@ export async function GET(request: NextRequest) {
     } else if (date) {
       // Handle single date query for daily view
       const targetDate = new Date(date)
-      targetDate.setHours(0, 0, 0, 0)
+      targetDate.setUTCHours(0, 0, 0, 0)
       const nextDay = new Date(targetDate)
-      nextDay.setDate(nextDay.getDate() + 1)
+      nextDay.setUTCDate(nextDay.getUTCDate() + 1)
 
       console.log('📅 API: Querying database for single date:', {
         targetDate: targetDate.toISOString(),
@@ -62,7 +62,8 @@ export async function GET(request: NextRequest) {
         .from(taskCompletions)
         .where(
           and(
-            eq(taskCompletions.completedDate, targetDate)
+            gte(taskCompletions.completedDate, targetDate),
+            lt(taskCompletions.completedDate, nextDay)
           )
         )
 
@@ -91,8 +92,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { taskId, completed, date } = body
 
-    const completedDate = new Date(date || new Date())
-    completedDate.setHours(0, 0, 0, 0)
+    // If a date is provided, use it as-is (already converted to UTC by frontend)
+    // If no date is provided, create a new UTC date for "today"
+    let completedDate: Date
+    if (date) {
+      completedDate = new Date(date)
+    } else {
+      completedDate = new Date()
+      completedDate.setUTCHours(0, 0, 0, 0)
+    }
+
+    console.log('📅 API: Task completion POST request:', {
+      taskId,
+      completed,
+      providedDate: date,
+      finalCompletedDate: completedDate.toISOString()
+    })
 
     // Check if completion record already exists for this task and date
     const existing = await db
