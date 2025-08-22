@@ -34,6 +34,11 @@ export default function PullToRefresh({
     const currentY = e.touches[0].clientY
     const distance = Math.max(0, currentY - startY.current)
     
+    // Prevent default behavior when pulling down
+    if (distance > 10) {
+      e.preventDefault()
+    }
+    
     // Add some resistance to the pull
     const resistance = Math.pow(distance / threshold, 0.8) * threshold
     setPullDistance(Math.min(resistance, threshold * 1.5))
@@ -62,7 +67,7 @@ export default function PullToRefresh({
     if (!container) return
 
     container.addEventListener('touchstart', handleTouchStart, { passive: true })
-    container.addEventListener('touchmove', handleTouchMove, { passive: true })
+    container.addEventListener('touchmove', handleTouchMove, { passive: false }) // Changed to false to allow preventDefault
     container.addEventListener('touchend', handleTouchEnd, { passive: true })
 
     return () => {
