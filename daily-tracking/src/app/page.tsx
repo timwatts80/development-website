@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import TaskGroupDialog from '@/components/TaskGroupDialog'
 import CalendarDialog from '@/components/CalendarDialog'
 import TaskLoadingSpinner from '@/components/TaskLoadingSpinner'
+import PullToRefresh from '@/components/PullToRefresh'
 import { DatabaseService, TaskGroup, Task } from '@/services/database'
 import { 
   getLocalToday, 
@@ -623,8 +624,34 @@ export default function DailyTracker() {
   const totalTasks = todaysTasks.length
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
+  // Pull to refresh function
+  const handleRefresh = async () => {
+    console.log('🔄 Pull to refresh triggered')
+    try {
+      // Reload task groups and current day's completions
+      const utcDate = localDateToUTC(selectedDate)
+      const [groups, completions] = await Promise.all([
+        DatabaseService.getTaskGroups(),
+        fetch(`/api/task-completions/?date=${encodeURIComponent(utcDate.toISOString())}`).then(res => res.json())
+      ])
+
+      setTaskGroups(groups)
+      
+      const completionMap: {[key: string]: boolean} = {}
+      completions.forEach((completion: {taskId: string, completed: boolean}) => {
+        completionMap[completion.taskId] = completion.completed
+      })
+      setTaskCompletionState(completionMap)
+      
+      console.log('🔄 Refresh completed successfully')
+    } catch (error) {
+      console.error('🔄 Refresh failed:', error)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="mx-auto max-w-6xl px-4 py-8">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -862,5 +889,6 @@ export default function DailyTracker() {
         />
       </div>
     </div>
+    </PullToRefresh>
   )
 }
