@@ -100,7 +100,15 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, name, color, duration, startDate, tasks: taskList } = body
 
-    console.log('🔧 PUT: Updating task group with type field fix')
+    console.log('🔧 PUT: Received update request:', {
+      id,
+      name,
+      color,
+      duration,
+      startDate,
+      taskCount: taskList?.length || 0,
+      tasks: taskList?.map((t: any) => ({ id: t.id, text: t.text, hasId: !!t.id })) || []
+    })
 
     // Parse the startDate as a local date, then convert to UTC for database storage
     const localStartDate = typeof startDate === 'string' ? parseLocalDate(startDate) : new Date(startDate)
@@ -119,25 +127,123 @@ export async function PUT(request: NextRequest) {
       .where(eq(taskGroups.id, id))
       .returning()
 
-    // Delete existing tasks and create new ones
-    await db.delete(tasks).where(eq(tasks.groupId, id))
+    // Smart task updating to preserve task IDs and completion states
+    console.log('🔧 PUT: Starting smart task update for group:', id)
     
-    const newTasks = []
+    // Get existing tasks for this group
+    const existingTasks = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.groupId, id))
+    
+    console.log('🔧 PUT: Found existing tasks:', existingTasks.length)
+    console.log('🔧 PUT: Incoming tasks:', taskList?.length || 0)
+    
+    const finalTasks = []
+    const tasksToDelete = [...existingTasks] // Copy for tracking deletions
+    const tasksToCreate = []
+    const tasksToUpdate = []
+    
     if (taskList && taskList.length > 0) {
-      const insertedTasks = await db
-        .insert(tasks)
-        .values(
-          taskList.map((task: { text: string; completed?: boolean }) => ({
+      // Process each incoming task
+      for (const incomingTask of taskList) {
+        // Check if this task has an ID (preserved from client)
+        if (incomingTask.id) {
+          // Find existing task by ID
+          const existingTask = existingTasks.find(t => t.id === incomingTask.id)
+          
+          if (existingTask) {
+            // Task exists - update it if text changed
+            if (existingTask.text !== incomingTask.text) {
+              tasksToUpdate.push({
+                id: existingTask.id,
+                text: incomingTask.text
+              })
+              console.log('🔧 PUT: Will update task:', { id: existingTask.id, oldText: existingTask.text, newText: incomingTask.text })
+            } else {
+              console.log('🔧 PUT: Task unchanged:', { id: existingTask.id, text: existingTask.text })
+            }
+            
+            // Remove from deletion list (it's being kept)
+            const deleteIndex = tasksToDelete.findIndex(t => t.id === existingTask.id)
+            if (deleteIndex > -1) {
+              tasksToDelete.splice(deleteIndex, 1)
+            }
+            
+            finalTasks.push({
+              ...existingTask,
+              text: incomingTask.text // Use updated text
+            })
+          } else {
+            // Task has ID but doesn't exist in DB - treat as new task
+            tasksToCreate.push({
+              groupId: id,
+              text: incomingTask.text,
+              type: 'task',
+              completed: false
+            })
+            console.log('🔧 PUT: Will create task with specific ID (shouldn\'t happen):', incomingTask.id)
+          }
+        } else {
+          // No ID - this is a new task
+          tasksToCreate.push({
             groupId: id,
-            text: task.text,
-            type: 'task', // Add the required type field
-            completed: task.completed || false
-          }))
-        )
+            text: incomingTask.text,
+            type: 'task',
+            completed: false
+          })
+          console.log('🔧 PUT: Will create new task:', incomingTask.text)
+        }
+      }
+    }
+    
+    console.log('🔧 PUT: Task update summary:', {
+      toDelete: tasksToDelete.length,
+      toUpdate: tasksToUpdate.length,
+      toCreate: tasksToCreate.length
+    })
+    
+    // Execute database operations
+    
+    // 1. Delete removed tasks
+    if (tasksToDelete.length > 0) {
+      for (const taskToDelete of tasksToDelete) {
+        await db.delete(tasks).where(eq(tasks.id, taskToDelete.id))
+        console.log('🔧 PUT: Deleted task:', { id: taskToDelete.id, text: taskToDelete.text })
+      }
+    }
+    
+    // 2. Update existing tasks
+    if (tasksToUpdate.length > 0) {
+      for (const taskUpdate of tasksToUpdate) {
+        const [updatedTask] = await db
+          .update(tasks)
+          .set({ text: taskUpdate.text })
+          .where(eq(tasks.id, taskUpdate.id))
+          .returning()
+        
+        console.log('🔧 PUT: Updated task:', updatedTask)
+        
+        // Update finalTasks with the actual updated task
+        const finalIndex: number = finalTasks.findIndex(t => t.id === taskUpdate.id)
+        if (finalIndex > -1) {
+          finalTasks[finalIndex] = updatedTask
+        }
+      }
+    }
+    
+    // 3. Create new tasks
+    if (tasksToCreate.length > 0) {
+      const createdTasks = await db
+        .insert(tasks)
+        .values(tasksToCreate)
         .returning()
       
-      newTasks.push(...insertedTasks)
+      console.log('🔧 PUT: Created tasks:', createdTasks.length)
+      finalTasks.push(...createdTasks)
     }
+    
+    const newTasks = finalTasks
 
     return NextResponse.json({
       ...updatedGroup,

@@ -495,6 +495,23 @@ export default function DailyTracker() {
         setTaskGroups(prev => prev.map(group => 
           group.id === editingGroup.id ? updatedGroup : group
         ))
+        
+        // Reload completion state to sync with any task ID changes
+        console.log('🔧 Reloading completion state after task group update')
+        try {
+          const utcDate = localDateToUTC(selectedDate)
+          const completions = await fetch(`/api/task-completions/?date=${encodeURIComponent(utcDate.toISOString())}`).then(res => res.json())
+          
+          const completionMap: {[key: string]: boolean} = {}
+          completions.forEach((completion: {taskId: string, completed: boolean}) => {
+            completionMap[completion.taskId] = completion.completed
+          })
+          setTaskCompletionState(completionMap)
+          console.log('🔧 Completion state reloaded after update:', completionMap)
+        } catch (error) {
+          console.error('🔧 Failed to reload completion state:', error)
+        }
+        
         setEditingGroup(null)
       } else {
         console.log('🔧 Creating new group')
